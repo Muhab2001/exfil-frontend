@@ -1,17 +1,16 @@
-import type { User } from "typings/globals";
 import { defineStore } from "pinia";
 import { reactive, readonly } from "vue";
 import { Role, RoleMap } from "@/enums/roles";
 
 import { AxiosInstance } from "@/axios";
+import type { User } from "@/typings/globals";
 
 export const useAuth = defineStore("auth", () => {
   const userProfile = reactive<User>({
-    username: "",
-    fullname: "",
-    photoUrl: "",
+    username: "Testing admin",
+    fullname: "admin bebob",
     // ! should default to a student
-    role: Role.UNSET,
+    role: Role.ADMIN,
   });
 
   // TODO proper fetching for the token
@@ -23,9 +22,9 @@ export const useAuth = defineStore("auth", () => {
       firstName: string;
       lastName: string;
       username: string;
-      photoUrl: string;
+
       role: number;
-      id: number
+      id: number;
     } = (
       await AxiosInstance.post(
         "/refresh",
@@ -43,7 +42,6 @@ export const useAuth = defineStore("auth", () => {
     };
 
     userProfile.username = response.username;
-    userProfile.photoUrl = "http://localhost:3000/" + response.photoUrl;
     userProfile.role = RoleMap[response.role];
 
     userProfile.fullname = response.firstName + " " + response.lastName;
@@ -55,7 +53,7 @@ export const useAuth = defineStore("auth", () => {
       name: string;
       access_token: string;
       username: string;
-      photoUrl: string;
+
       role: number;
       id: number;
     } = (
@@ -72,15 +70,13 @@ export const useAuth = defineStore("auth", () => {
     // store the token in localStorage
     // populate the state
     userProfile.username = username;
-    userProfile.photoUrl = "http://localhost:3000/" + response.photoUrl;
     userProfile.role = RoleMap[response.role];
-
     userProfile.fullname = response.name;
   }
 
   function logout(): void {
     userProfile.username = "";
-    userProfile.photoUrl = "";
+
     userProfile.role = Role.UNSET;
 
     // remove the token from axios headers

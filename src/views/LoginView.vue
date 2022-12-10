@@ -62,7 +62,7 @@ const submitForm = () => {
           //     password: model.value.password,
           //   })
           // );
-          await auth.login(model.value.username!, model.value.password!);
+          // await auth.login(model.value.username!, model.value.password!);
           messenger.success("Successful sign in!");
           router.push("/home");
         } catch (e: any) {
