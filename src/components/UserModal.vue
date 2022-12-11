@@ -14,10 +14,10 @@
     @close="() => $emit('closed')"
     size="large"
   >
-    <NForm :model="modelRef" ref="formRef" :rules="formRules">
+    <NForm :model="userModel" ref="formRef" :rules="formRules">
       <NFormItem path="username" label="Username">
         <NInput
-          v-model:value="modelRef.username"
+          v-model:value="userModel.username"
           max-length="30"
           show-count
           clearable
@@ -25,7 +25,7 @@
       </NFormItem>
       <NFormItem path="email" label="Email">
         <NInput
-          v-model:value="modelRef.email"
+          v-model:value="userModel.email"
           max-length="30"
           show-count
           type="email"
@@ -34,7 +34,7 @@
       </NFormItem>
       <NFormItem path="phone" label="Phone number">
         <NInput
-          v-model:value="modelRef.phone"
+          v-model:value="userModel.phone"
           max-length="30"
           show-count
           type="phone"
@@ -43,7 +43,7 @@
       </NFormItem>
       <NFormItem path="password" label="Password">
         <NInput
-          v-model:value="modelRef.password"
+          v-model:value="userModel.password"
           max-length="30"
           show-count
           type="password"
@@ -61,8 +61,10 @@
 </template>
 
 <script setup lang="ts">
+import { AxiosInstance } from "@/axios";
+import { Role } from "@/enums/roles";
 import { NForm, NModal, type FormInst, type FormRules } from "naive-ui";
-import { ref, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 
 interface UserModalProps {
   user_id: number;
@@ -80,14 +82,6 @@ interface UserModel {
 const props = defineProps<UserModalProps>();
 const emits = defineEmits<{ (E: "closed"): void }>();
 
-const formRef = ref<FormInst | null>(null);
-const modelRef = ref<UserModel>({
-  username: "",
-  email: "",
-  password: "",
-  phone: "",
-});
-
 const formRules: FormRules = {
   username: {
     required: true,
@@ -103,14 +97,42 @@ const formRules: FormRules = {
   },
 };
 
+const formRef = ref<FormInst | null>(null);
+const userModel = reactive<UserModel>({
+  username: "",
+  email: "",
+  password: "",
+  phone: "",
+});
+
+const fetchData = async () => {
+  const fetchedUser = await AxiosInstance.get(`user/${props.user_id}`, {
+    params: `${props.user_id}`
+  });
+  
+  userModel.username = fetchedUser.data.username;
+  userModel.password = fetchedUser.data.password;
+  if (fetchedUser.data.role == Role.CUSTOMER) {
+    // if customer
+    userModel.phone = fetchedUser.data.phone;
+    userModel.email = fetchedUser.data.email;
+  }
+  else if (fetchedUser.data.role != Role.UNSET) {
+    // if not unset aka if employee
+    userModel.phone = fetchedUser.data.company_phone;
+    userModel.email = fetchedUser.data.company_email;
+  }
+};
+
 watch(
   () => props.visible,
-  () => {
+  async () => {
     if (props.visible) {
       if (props.mode === "create") {
         // empty all fields
       } else {
         // pre-fill all fields with passed data
+        fetchData();
       }
     }
   }

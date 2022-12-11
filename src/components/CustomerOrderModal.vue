@@ -68,10 +68,12 @@ import type {
   PackageLocation,
   OrderModel,
 } from "@/typings/globals";
+import { AxiosInstance } from "@/axios";
 import { NForm, NModal, type FormRules } from "naive-ui";
-import { reactive, watch, ref } from "vue";
+import { reactive, watch, ref, onBeforeMount } from "vue";
 import LocationCard from "./LocationCard.vue";
 import PackageCard from "./PackageCard.vue";
+import { Role } from "@/enums/roles";
 
 interface OrderDeliveryModalProps {
   order_id: number;
@@ -101,18 +103,60 @@ const orderRules: FormRules = {
   },
 };
 
-// TODO fetch the information on modal visibility
 const order = reactive<OrderState>({
   packages: [],
+  // FIXME: expected_date isn't in the back-end
   expected_date: new Date().toLocaleDateString(),
   previous_locations: [],
 });
+
+const fetchData = async () => {
+  const fetchedOrder = await AxiosInstance.get(`order/${props.order_id}`, {
+    params: props.order_id
+  });
+  // TODO: discuss fullPackageRecord with muhab
+  order.packages = fetchedOrder.data.packages;
+
+  const transport_events = fetchedOrder.data.transport_event;
+  order.previous_locations = transport_events.map((transport_event: any): PackageLocation => {
+    // assuming that the end location of the last transport event is the destination, we will ignore it
+    const location = transport_event.start_location;
+    return {
+      timestamp: location.timestamp,
+      city: location.address.city,
+      country: location.address.country,
+      street: location.address.street,
+      zipcode: location.address.zip_code,
+    };
+  });
+
+  order.recipient = {
+    // FIXME: fullname isn't in the back-end
+    fullname: "",
+    username: fetchedOrder.data.recipient.username,
+    email: fetchedOrder.data.recipient.email,
+    role: Role.CUSTOMER,
+  };
+
+  const lastLocation = transport_events[transport_events.length-1].end_location;
+  order.destination = {
+    city: lastLocation.address.city,
+    country: lastLocation.address.country,
+    street: lastLocation.address.street,
+    zipcode: lastLocation.address.zip_code,
+  };
+};
 
 watch(
   () => props.visible,
   () => {}
 );
 
+onBeforeMount(async () => {
+  await fetchData();
+});
+
+// * I have no idea how that will work with only a number
 const submitForm = () => {};
 </script>
 
