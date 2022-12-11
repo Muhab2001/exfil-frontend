@@ -45,7 +45,7 @@
         <NSelect
           v-model:value="pkgmodelRefs[index].status"
           :options="
-            Object.values(PackageCategory).map((st) => ({
+            Object.values(PackageStatus).map((st) => ({
               label: st,
               value: st,
             }))
@@ -115,7 +115,44 @@
         />
       </NFormItem>
       <NFormItem path="zipcode" label="Zipcode">
-        <NInputNumber v-model:value="orderModelRef.zipcode" min="0" clearable />
+        <NInputNumber v-model:value="orderModelRef.zipcode" clearable />
+      </NFormItem>
+      <NDivider />
+      <h1>Recipient Details</h1>
+      <NFormItem path="recipient.username" label="Name">
+        <NInput v-model:value="orderModelRef.recipient.username" clearable />
+      </NFormItem>
+      <NFormItem path="recipient.email" label="Email">
+        <NInput
+          v-model:value="orderModelRef.recipient.email"
+          type="text"
+          clearable
+        />
+      </NFormItem>
+      <NFormItem path="recipient.phone" label="Phone number">
+        <NInput
+          v-model:value="orderModelRef.recipient.phone"
+          type="text"
+          clearable
+        />
+      </NFormItem>
+      <h1>Sender Details</h1>
+      <NFormItem path="sender.username" label="Name">
+        <NInput v-model:value="orderModelRef.sender.username" clearable />
+      </NFormItem>
+      <NFormItem path="recipient.email" label="Email">
+        <NInput
+          v-model:value="orderModelRef.sender.email"
+          type="text"
+          clearable
+        />
+      </NFormItem>
+      <NFormItem path="recipient.phone" label="Phone number">
+        <NInput
+          v-model:value="orderModelRef.sender.phone"
+          type="text"
+          clearable
+        />
       </NFormItem>
     </NForm>
     <template #footer>
@@ -129,6 +166,7 @@
 
 <script setup lang="ts">
 import { PackageCategory, PackageStatus } from "@/enums/packages";
+import type { OrderModel } from "@/typings/globals";
 import {
   NForm,
   NFormItem,
@@ -138,11 +176,14 @@ import {
   NSelect,
   type FormInst,
   type FormRules,
+  NDivider,
 } from "naive-ui";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 interface OrderModalProps {
   visible: boolean;
+  mode: "edit" | "create";
+  targetOrder?: number;
 }
 
 interface PackageModel {
@@ -152,16 +193,6 @@ interface PackageModel {
   width: number;
   length: number;
   weight: number;
-}
-
-interface OrderModel {
-  payment: number;
-  city: string;
-  country: string;
-  zipcode: number;
-  street: string;
-  recipient: string;
-  sender: string;
 }
 
 const packageRefs = ref<Array<FormInst | null>>([]);
@@ -183,8 +214,16 @@ const orderModelRef = ref<OrderModel>({
   country: "",
   zipcode: 0,
   street: "",
-  recipient: "",
-  sender: "",
+  recipient: {
+    username: "",
+    email: "",
+    phone: "",
+  },
+  sender: {
+    username: "",
+    email: "",
+    phone: "",
+  },
 });
 
 const orderFormRef = ref<FormInst | null>(null);
@@ -244,14 +283,38 @@ const orderRules: FormRules = {
     trigger: "blur",
   },
   recipient: {
-    required: true,
-    type: "integer",
-    trigger: "blur",
+    username: {
+      required: true,
+      type: "integer",
+      trigger: "blur",
+    },
+    email: {
+      required: true,
+      type: "email",
+      trigger: "blur",
+    },
+    phone: {
+      required: true,
+      type: "string",
+      trigger: "blur",
+    },
   },
   sender: {
-    required: true,
-    type: "integer",
-    trigger: "blur",
+    username: {
+      required: true,
+      type: "integer",
+      trigger: "blur",
+    },
+    email: {
+      required: true,
+      type: "email",
+      trigger: "blur",
+    },
+    phone: {
+      required: true,
+      type: "string",
+      trigger: "blur",
+    },
   },
   zipcode: {
     required: true,
@@ -265,6 +328,19 @@ const emits = defineEmits<{
   (e: "closed"): void;
 }>();
 
+watch(
+  () => props.visible,
+  () => {
+    if (props.visible) {
+      if (props.mode === "create") {
+        // empty all fields
+      } else {
+        // pre-fill all fields with passed data
+      }
+    }
+  }
+);
+
 // TODO: reset on every opening
 const sentPackages = ref<PackageModel[]>([]);
 
@@ -272,7 +348,7 @@ const addPackage = () => {};
 
 const deletePackage = () => {};
 
-const submitOrderForm = () => {
+const submitForm = () => {
   // validate every single package form, validate the order form, and then POST to targeted endpoint
 };
 </script>

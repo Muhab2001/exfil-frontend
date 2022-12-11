@@ -17,3 +17,9 @@ export enum PackageLocation {
   WAREHOUSE = 1,
   RECIPIENT_LOCATION = 2,
 }
+
+export enum EventType {
+  Truck = "Truck",
+  Flight = "Flight",
+  Ship = "Ship",
+}

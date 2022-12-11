@@ -1,5 +1,6 @@
 <template>
   <div>
+    <PackageModal />
     <!-- 2 date pickers with v-model -->
     <AdminStats :from="dateFilters.from" :to="dateFilters.to" />
     <PackagesTableView
@@ -13,7 +14,8 @@
 <script setup lang="ts">
 import AdminStats from "@/components/AdminStats.vue";
 import PackagesTableView from "@/components/PackagesTableView.vue";
-import type { PackageRecord } from "@/typings/globals";
+
+import type { PackageTableRecord } from "@/typings/globals";
 import { reactive } from "vue";
 
 interface PackageModalState {
@@ -29,7 +31,7 @@ const packageModalState = reactive<PackageModalState>({
   visible: false,
 });
 
-const selectPackage = (row: PackageRecord) => {};
+const selectPackage = (row: PackageTableRecord) => {};
 </script>
 
 <style scoped></style>

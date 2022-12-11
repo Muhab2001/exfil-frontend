@@ -11,6 +11,7 @@ export const useAuth = defineStore("auth", () => {
     fullname: "admin bebob",
     // ! should default to a student
     role: Role.ADMIN,
+    email: "clownystring@gmail.com",
   });
 
   // TODO proper fetching for the token

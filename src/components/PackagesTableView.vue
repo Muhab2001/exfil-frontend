@@ -16,6 +16,7 @@
 <script setup lang="ts">
 import { useAuth } from "@/stores/auth";
 import {
+  NButton,
   NDataTable,
   NSpace,
   NTag,
@@ -31,7 +32,10 @@ import { PackageStatus, PackageCategory } from "@/enums/packages";
 import type { TableColumn } from "naive-ui/es/data-table/src/interface";
 import {
   Box16Filled,
+  Delete16Filled,
+  Edit16Filled,
   ErrorCircle24Filled,
+  Star20Filled,
   Warning24Filled,
 } from "@vicons/fluent";
 import {
@@ -56,7 +60,7 @@ interface PackageRecord {
 
 interface PackagesTableProps {
   onRowSelected: (row: PackageRecord) => void;
-  extraActions?: TableColumn<PackageRecord>[];
+
   // external filters
   from: number;
   to: number;
@@ -68,6 +72,7 @@ interface PackageTableMetaData {
 }
 
 const props = defineProps<PackagesTableProps>();
+const emits = defineEmits<{ (e: "open", id: number): void }>();
 // util hooks
 const auth = useAuth();
 const iconUtils = useIcon();
@@ -153,6 +158,83 @@ const tableState = reactive<PackageTableMetaData>({
         multiple: 2,
       },
     },
+    {
+      title: "Actions",
+      key: "actions",
+      width: "100",
+      render(record: PackageRecord) {
+        return h(
+          NSpace,
+          { align: "center" },
+          {
+            default: () => [
+              h(
+                NButton,
+                {
+                  size: "small",
+                  round: true,
+                  type: "primary",
+                  secondary: true,
+                  strong: true,
+                  class: "t-py-2",
+                  onClick: () => openPackageModal(record.id),
+                },
+                {
+                  default: () => [
+                    h(
+                      NSpace,
+                      { align: "center" },
+                      {
+                        default: () => [
+                          h(
+                            iconUtils.renderIcon(Edit16Filled, {
+                              size: "22",
+                              class:
+                                "t-inline-flex t-items-center t-h-20 t-mr-0",
+                            })
+                          ),
+                        ],
+                      }
+                    ),
+                  ],
+                }
+              ),
+              h(
+                NButton,
+                {
+                  size: "small",
+                  round: true,
+                  type: "primary",
+                  secondary: true,
+                  strong: true,
+                  class: "t-py-2",
+                  onClick: () => deletePackage(record.id),
+                },
+                {
+                  default: () => [
+                    h(
+                      NSpace,
+                      { align: "center" },
+                      {
+                        default: () => [
+                          h(
+                            iconUtils.renderIcon(Delete16Filled, {
+                              size: "22",
+                              class:
+                                "t-inline-flex t-items-center t-h-20 t-mr-0",
+                            })
+                          ),
+                        ],
+                      }
+                    ),
+                  ],
+                }
+              ),
+            ],
+          }
+        );
+      },
+    },
   ],
   pagination: {
     page: 1,
@@ -161,18 +243,19 @@ const tableState = reactive<PackageTableMetaData>({
   },
 });
 
-if (props.extraActions)
-  tableState.columns = [...tableState.columns, ...props.extraActions];
-
 const tableData = ref<PackageRecord[]>([]);
 // ------------- Table Mutation functions --------------------
+
+const deletePackage = (packageId: number) => {};
+
+const openPackageModal = (packageId: number) => {};
 // fetching data according to current params
 const query = (page: number, pageSize: number = 10, order = "ascend") => {
   // fetch from axiosInstance supplying all needed filters/sorting query params
-  tableState.pagination.page = page;
 };
 // handling page change
 const handlePageChange = (currentPage: number) => {
+  tableState.pagination.page = currentPage;
   // switch the pagination state, and fire the query function
 };
 // handling filter change

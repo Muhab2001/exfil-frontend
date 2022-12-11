@@ -68,7 +68,9 @@ const route = useRoute();
     style="width: 100%; margin: 0; height: 100%; min-height: 100vh"
     abstract
   >
-    <div class="t-w-full t-h-[100vh] dark:t-bg-[#121212] t-overflow-x-hidden">
+    <div
+      class="t-w-full t-h-[100vh] dark:t-bg-[#121212] t-bg-white t-overflow-x-hidden"
+    >
       <header
         v-if="route.name !== 'login'"
         class="t-items-start t-flex t-flex-col t-w-full"
@@ -79,7 +81,12 @@ const route = useRoute();
         >
           <span class="t-inline-flex t-w-fit t-ml-1">
             <!-- the cortex logo -->
-            <NIcon :component="BoxMultiple24Filled" />
+            <NIcon
+              size="40"
+              class="t-mr-3"
+              color="green"
+              :component="BoxMultiple24Filled"
+            />
             <h2
               class="t-text-slate-700 t-font-bold t-hidden sm:t-inline-flex dark:t-text-white"
             >

@@ -1,73 +1,86 @@
 <template>
   <div>
     <div>
-      <h1>Payments & Packages</h1>
-      <p>Total statistics for packages and payments</p>
+      <div>
+        <h1>Payments & Packages</h1>
+        <p>Total statistics for packages and payments</p>
+      </div>
+      <NRow>
+        <NCol :span="12">
+          <NStatistic label="Total Packages" :value="stats.total_packages">
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="12">
+          <NStatistic
+            label="Confirmed Payments"
+            :value="stats.confirmed_payments"
+          >
+            <template #prefix></template></NStatistic
+        ></NCol>
+      </NRow>
     </div>
-    <NRow>
-      <NCol :span="12">
-        <NStatistic label="Total Packages" :value="stats.total_packages">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic
-          label="Confirmed Payments"
-          :value="stats.confirmed_payments"
-        >
-          <template #prefix></template></NStatistic
-      ></NCol>
-    </NRow>
+
     <div>
-      <h1>Packages by Category</h1>
-      <p>Packages stats classified by category</p>
+      <div>
+        <h1>Packages by Category</h1>
+        <p>Packages stats classified by category</p>
+      </div>
+      <NRow>
+        <NCol :span="6">
+          <NStatistic
+            label="Regular Packages"
+            :value="stats.categories.Regular"
+          >
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="6">
+          <NStatistic
+            label="Fragile Packages"
+            :value="stats.categories.Fragile"
+          >
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="6">
+          <NStatistic label="Liquid Packages" :value="stats.categories.Liquid">
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="6">
+          <NStatistic
+            label="Chemical Packages"
+            :value="stats.categories.Chemical"
+          >
+            <template #prefix></template></NStatistic
+        ></NCol>
+      </NRow>
     </div>
-    <NRow>
-      <NCol :span="12">
-        <NStatistic label="Regular Packages" :value="stats.categories.Regular">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic label="Fragile Packages" :value="stats.categories.Fragile">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic label="Liquid Packages" :value="stats.categories.Liquid">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic
-          label="Chemical Packages"
-          :value="stats.categories.Chemical"
-        >
-          <template #prefix></template></NStatistic
-      ></NCol>
-    </NRow>
+
     <div>
-      <h1>Packages by Status</h1>
-      <p>Packages stats classified by status</p>
+      <div>
+        <h1>Packages by Status</h1>
+        <p>Packages stats classified by category</p>
+      </div>
+      <NRow>
+        <NCol :span="12">
+          <NStatistic
+            label="Delivered Packages"
+            :value="stats.statuses.Delivered"
+          >
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="12">
+          <NStatistic label="Transit Packages" :value="stats.statuses.Transit">
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="12">
+          <NStatistic label="Damaged Packages" :value="stats.statuses.Damaged">
+            <template #prefix></template></NStatistic
+        ></NCol>
+        <NCol :span="12">
+          <NStatistic label="Lost Packages" :value="stats.statuses.Lost">
+            <template #prefix></template></NStatistic
+        ></NCol>
+      </NRow>
     </div>
-    <NRow>
-      <NCol :span="12">
-        <NStatistic
-          label="Delivered Packages"
-          :value="stats.statuses.Delivered"
-        >
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic label="Transit Packages" :value="stats.statuses.Transit">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic label="Damaged Packages" :value="stats.statuses.Damaged">
-          <template #prefix></template></NStatistic
-      ></NCol>
-      <NCol :span="12">
-        <NStatistic label="Lost Packages" :value="stats.statuses.Lost">
-          <template #prefix></template></NStatistic
-      ></NCol>
-    </NRow>
-   
   </div>
 </template>
 
