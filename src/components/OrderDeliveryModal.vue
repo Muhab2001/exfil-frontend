@@ -110,7 +110,6 @@ interface OrderState {
   expected_date: string;
   destination?: Omit<PackageLocation, "timestamp">;
   previous_locations: PackageLocation[];
-  statuses: PackageStatus[];
 }
 
 const props = defineProps<OrderDeliveryModalProps>();
