@@ -62,7 +62,8 @@
 
 <script setup lang="ts">
 import { AxiosInstance } from "@/axios";
-import { Role } from "@/enums/roles";
+import { Role, RoleArray } from "@/enums/roles";
+import type { AxiosResponse } from "axios";
 import { NForm, NModal, type FormInst, type FormRules } from "naive-ui";
 import { reactive, ref, watch } from "vue";
 
@@ -105,20 +106,22 @@ const userModel = reactive<UserModel>({
   phone: "",
 });
 
+var fetchedUser: AxiosResponse<any,any>;
+
 const fetchData = async () => {
-  const fetchedUser = await AxiosInstance.get(`user/${props.user_id}`, {
+  fetchedUser = await AxiosInstance.get(`user/${props.user_id}`, {
     params: `${props.user_id}`
   });
   
   userModel.username = fetchedUser.data.username;
   userModel.password = fetchedUser.data.password;
-  if (fetchedUser.data.role == Role.CUSTOMER) {
+  if (RoleArray[fetchedUser.data.role] == Role.CUSTOMER) {
     // if customer
     userModel.phone = fetchedUser.data.phone;
     userModel.email = fetchedUser.data.email;
   }
-  else if (fetchedUser.data.role != Role.UNSET) {
-    // if not unset aka if employee
+  else {
+    // if employee
     userModel.phone = fetchedUser.data.company_phone;
     userModel.email = fetchedUser.data.company_email;
   }
@@ -138,7 +141,39 @@ watch(
   }
 );
 
-const submitForm = () => {};
+const submitForm = async () => {
+  // * assuming all UserModals with mode == create are customers
+  let customerRoleNumber: number = -1;
+  
+  RoleArray.forEach((role:Role, index:number) => {
+    if (role == Role.CUSTOMER) {
+      customerRoleNumber = index
+    }
+  });
+
+  const reqBody = {
+    username: userModel.username,
+    id: props.user_id,
+    password: userModel.password,
+    role: customerRoleNumber,
+    email: userModel.email,
+    phone_number: userModel.phone,
+  };
+  if (props.mode === "create") {
+    fetchedUser = await AxiosInstance.post(`user`, {
+    body: JSON.stringify(reqBody),
+  });
+  } else {
+    switch (RoleArray[fetchedUser.data.role]) {
+      case Role.CUSTOMER:
+        
+      case Role.RETAIL_EMPLOYEE:
+
+      case Role.DELIVERY_EMPLOYEE:
+
+    }
+  }
+};
 </script>
 
 <style scoped></style>

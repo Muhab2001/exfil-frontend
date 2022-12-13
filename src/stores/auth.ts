@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { reactive, readonly } from "vue";
-import { Role, RoleMap } from "@/enums/roles";
+import { Role, RoleArray } from "@/enums/roles";
 
 import { AxiosInstance } from "@/axios";
 import type { User } from "@/typings/globals";
@@ -43,7 +43,7 @@ export const useAuth = defineStore("auth", () => {
     };
 
     userProfile.username = response.username;
-    userProfile.role = RoleMap[response.role];
+    userProfile.role = RoleArray[response.role];
 
     userProfile.fullname = response.firstName + " " + response.lastName;
   }
@@ -71,7 +71,7 @@ export const useAuth = defineStore("auth", () => {
     // store the token in localStorage
     // populate the state
     userProfile.username = username;
-    userProfile.role = RoleMap[response.role];
+    userProfile.role = RoleArray[response.role];
     userProfile.fullname = response.name;
   }
 

@@ -6,10 +6,10 @@ export enum Role {
   ADMIN = "admin",
 }
 
-export const RoleMap: { [key: number]: Role } = {
-  0: Role.UNSET,
-  1: Role.CUSTOMER,
-  2: Role.DELIVERY_EMPLOYEE,
-  3: Role.RETAIL_EMPLOYEE,
-  4: Role.ADMIN,
-};
+export const RoleArray: Role[]= [
+  Role.UNSET,
+  Role.CUSTOMER,
+  Role.DELIVERY_EMPLOYEE,
+  Role.RETAIL_EMPLOYEE,
+  Role.ADMIN,
+];
