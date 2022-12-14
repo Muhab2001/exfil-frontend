@@ -149,12 +149,12 @@ const fetchData = async () => {
 
 watch(
   () => props.visible,
-  () => {}
+  async () => {
+    if (props.visible) {
+      await fetchData();
+    }
+  }
 );
-
-onBeforeMount(async () => {
-  await fetchData();
-});
 
 // * I have no idea how that will work with only a number
 const submitForm = () => {};

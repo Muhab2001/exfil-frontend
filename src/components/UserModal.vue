@@ -110,21 +110,37 @@ var fetchedUser: AxiosResponse<any,any>;
 
 const fetchData = async () => {
   fetchedUser = await AxiosInstance.get(`user/${props.user_id}`, {
-    params: `${props.user_id}`
+    params: {id: `${props.user_id}`}
   });
   
   userModel.username = fetchedUser.data.username;
   userModel.password = fetchedUser.data.password;
-  if (RoleArray[fetchedUser.data.role] == Role.CUSTOMER) {
-    // if customer
-    userModel.phone = fetchedUser.data.phone;
-    userModel.email = fetchedUser.data.email;
-  }
-  else {
-    // if employee
-    userModel.phone = fetchedUser.data.company_phone;
-    userModel.email = fetchedUser.data.company_email;
-  }
+  switch (RoleArray[fetchedUser.data.role]) {
+      case Role.CUSTOMER:
+        {
+          fetchedUser = await AxiosInstance.get(`user/customer/${props.user_id}`, {
+            params: {id: `${props.user_id}`},
+          });
+          userModel.phone = fetchedUser.data.phone;
+          userModel.email = fetchedUser.data.email;
+        }
+      case Role.RETAIL_EMPLOYEE:
+        {
+          fetchedUser = await AxiosInstance.get(`user/retail-employee/${props.user_id}`, {
+            params: {id: `${props.user_id}`},
+          });
+          userModel.phone = fetchedUser.data.company_phone;
+          userModel.email = fetchedUser.data.company_email;
+        }
+      case Role.DELIVERY_EMPLOYEE:
+        {
+          fetchedUser = await AxiosInstance.get(`user/delivery-employee/${props.user_id}`, {
+            params: {id: `${props.user_id}`}
+          });
+          userModel.phone = fetchedUser.data.company_phone;
+          userModel.email = fetchedUser.data.company_email;
+        }
+    }
 };
 
 watch(
@@ -142,7 +158,7 @@ watch(
 );
 
 const submitForm = async () => {
-  // * assuming all UserModals with mode == create are customers
+  // * assuming all UserModals with mode == create are customers due to the lack of inputs in the form (salary, retail_center)
   let customerRoleNumber: number = -1;
   
   RoleArray.forEach((role:Role, index:number) => {
@@ -151,26 +167,44 @@ const submitForm = async () => {
     }
   });
 
-  const reqBody = {
+  const reqBody: { [key: string]: string | number} = {
     username: userModel.username,
     id: props.user_id,
     password: userModel.password,
-    role: customerRoleNumber,
     email: userModel.email,
     phone_number: userModel.phone,
   };
   if (props.mode === "create") {
-    fetchedUser = await AxiosInstance.post(`user`, {
-    body: JSON.stringify(reqBody),
-  });
+    reqBody.role = customerRoleNumber;
+    await AxiosInstance.post(`user`, {
+      body: reqBody,
+    });
   } else {
     switch (RoleArray[fetchedUser.data.role]) {
       case Role.CUSTOMER:
-        
+        {
+          await AxiosInstance.patch(`user/customer/${props.user_id}`, {
+            params: {id: `${props.user_id}`},
+            body: reqBody,
+          });
+        }
       case Role.RETAIL_EMPLOYEE:
-
+        {
+          // I commented the next line to see if it is possible to send a request to "user/retail-employee/:id"
+          // without the retail_center id in the body
+          // reqBody.retail_center = fetchedUser.data.retail_center.id;
+          await AxiosInstance.patch(`user/retail-employee/${props.user_id}`, {
+            params: {id: `${props.user_id}`},
+            body: reqBody,
+          });
+        }
       case Role.DELIVERY_EMPLOYEE:
-
+        {
+          await AxiosInstance.patch(`user/delivery-employee/${props.user_id}`, {
+            params: {id: `${props.user_id}`},
+            body: reqBody,
+          });
+        }
     }
   }
 };

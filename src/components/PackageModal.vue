@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { PackageStatus, PackageCategory } from "@/enums/packages";
-import { onBeforeMount, reactive, ref } from "vue";
+import { onBeforeMount, reactive, ref, watch } from "vue";
 import {
   type FormInst,
   type FormRules,
@@ -139,9 +139,14 @@ const fetchData = async () => {
   pkgmodel.weight = fetchedPkg.data.weight;
 };
 
-onBeforeMount(async () => {
-  await fetchData();
-});
+watch(
+  () => props.visible,
+  async () => {
+    if (props.visible) {
+      await fetchData();
+    }
+  }
+);
 
 </script>
 

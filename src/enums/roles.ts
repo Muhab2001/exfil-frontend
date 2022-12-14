@@ -1,7 +1,7 @@
 export enum Role {
   UNSET = "unset",
   CUSTOMER = "customer",
-  RETAIL_EMPLOYEE = "reatil-emp",
+  RETAIL_EMPLOYEE = "retail-emp",
   DELIVERY_EMPLOYEE = "delivery-emp",
   ADMIN = "admin",
 }
