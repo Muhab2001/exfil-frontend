@@ -76,6 +76,41 @@
       <NFormItem path="zipcode" label="Zipcode">
         <NInputNumber v-model:value="orderModelRef.zipcode" min="0" clearable />
       </NFormItem>
+      <NFormItem path="status" label="Status">
+        <NSelect
+          v-model:value="orderModelRef.status"
+          :options="
+            Object.values(PackageStatus).map((st) => ({
+              label: st,
+              value: st,
+            }))
+          "
+        />
+      </NFormItem>
+      <NFormItem path="transport" label="Transport Event Type">
+        <NSelect
+          v-model:value="orderModelRef.transport"
+          :options="
+            Object.values(EventType).map((evType) => ({
+              label: evType,
+              value: evType,
+            }))
+          "
+        />
+      </NFormItem>
+      <NFormItem path="locationType" label="Location Type">
+        <NSelect
+          v-model:value="orderModelRef.locationType"
+          :options="
+            (Object.values(PackageLocationType).filter(value => typeof value === 'string') as string[])
+              .map((locType: string, index: number) => ({
+              label: locType[0] + locType.substring(1).toLowerCase(),
+              value: index,
+              })
+            )
+          "
+        />
+      </NFormItem>
       <NButton class="t-w-full t-mr-2" @click="submitForm" type="success"
         >Submit</NButton
       >
@@ -87,7 +122,9 @@
 </template>
 
 <script setup lang="ts">
-import { PackageStatus, EventType } from "@/enums/packages";
+import { AxiosInstance } from "@/axios";
+import { PackageStatus, EventType, PackageLocationType } from "@/enums/packages";
+import { Role } from "@/enums/roles";
 import type {
   fullPackageRecord,
   User,
@@ -115,9 +152,11 @@ interface OrderState {
 const props = defineProps<OrderDeliveryModalProps>();
 const emits = defineEmits<{ (e: "closed"): void }>();
 
-const orderModelRef = ref<
+const orderModelRef = reactive<
   Omit<OrderModel, "recipient" | "sender" | "payment"> & {
     transport: EventType;
+    locationType: PackageLocationType;
+    status: PackageStatus;
   }
 >({
   city: "",
@@ -125,6 +164,8 @@ const orderModelRef = ref<
   zipcode: 0,
   street: "",
   transport: EventType.Truck,
+  locationType: PackageLocationType.AIRPORT,
+  status: PackageStatus.TRANSIT,
 });
 
 const orderRules: FormRules = {
@@ -155,21 +196,93 @@ const orderRules: FormRules = {
   },
 };
 
-// TODO fetch the information on modal visibility
 const order = reactive<OrderState>({
   packages: [],
   expected_date: new Date().toLocaleDateString(),
   previous_locations: [],
 });
 
+const fetchData = async () => {
+  const fetchedOrder = await AxiosInstance.get(`order/${props.order_id}`, {
+    params: {id: props.order_id}
+  });
+  const fetchedPackages = fetchedOrder.data.packages.map((pkg: any): fullPackageRecord => {
+    return {
+      weight: pkg.weight,
+      length: pkg.length,
+      width: pkg.width,
+      height: pkg.height,
+      id: pkg.package_number,
+      status: pkg.status,
+      category: pkg.category,
+      entry_timestamp: pkg.entry_timestamp,
+      delivery_date: pkg.delivery_date,
+      sender: fetchedOrder.data.sender.username,
+      recipient: fetchedOrder.data.recipient.username,
+      customer_name: "",
+      address: "",
+      orderNumber: fetchedOrder.data.id,
+    }
+  });
+
+  order.packages = fetchedPackages;
+
+  const transport_events = fetchedOrder.data.transport_event;
+  order.previous_locations = transport_events.map((transport_event: any): PackageLocation => {
+      // assuming that the end location of the last transport event is the current location/destination, we will ignore it
+      const location = transport_event.start_location;
+      return {
+        timestamp: location.timestamp,
+        city: location.address.city,
+        country: location.address.country,
+        street: location.address.street,
+        zipcode: location.address.zip_code,
+      };
+    });
+
+  order.recipient = {
+    // FIXME: fullname isn't in the back-end
+    fullname: "",
+    username: fetchedOrder.data.recipient.username,
+    email: fetchedOrder.data.recipient.email,
+    role: Role.CUSTOMER,
+  };
+
+  const final_destination = fetchedOrder.data.final_destination;
+  order.destination = {
+    city: final_destination.city,
+    country: final_destination.country,
+    street: final_destination.street,
+    zipcode: final_destination.zip_code,
+  };
+};
+
 watch(
   () => props.visible,
-  () => {}
+  async () => {
+    if (props.visible) {
+      await fetchData();
+    }
+  }
 );
 
 const updateOrderStatus = (value: PackageStatus) => {};
 
-const submitForm = () => {};
+const submitForm = async () => {
+  const reqBody = {
+    city: orderModelRef.city,
+    country: orderModelRef.country,
+    street: orderModelRef.street,
+    zipcode: orderModelRef.zipcode,
+    locationType: orderModelRef.locationType,
+    eventType: orderModelRef.transport,
+    statuses: orderModelRef.status,
+  };
+  await AxiosInstance.post(`order/location/${props.order_id}`, {
+    params: {id: props.order_id},
+    body: reqBody,
+  });
+};
 </script>
 
 <style scoped></style>
