@@ -68,66 +68,70 @@ const route = useRoute();
     style="width: 100%; margin: 0; height: 100%; min-height: 100vh"
     abstract
   >
-    <div
-      class="t-w-full t-h-[100vh] dark:t-bg-[#121212] t-bg-white t-overflow-x-hidden"
-    >
-      <header
-        v-if="route.name !== 'login'"
-        class="t-items-start t-flex t-flex-col t-w-full"
-      >
-        <!-- header title -->
+    <NMessageProvider style="width: 100vw; height: 100%">
+      <NLoadingBarProvider>
         <div
-          class="t-w-full t-flex-row t-flex t-justify-between t-items-center t-shadow-md t-pt-2 md:t-pt-4 t-px-4"
+          class="t-w-full t-h-[100vh] dark:t-bg-[#121212] t-bg-white t-overflow-x-hidden"
         >
-          <span class="t-inline-flex t-w-fit t-ml-1">
-            <!-- the cortex logo -->
-            <NIcon
-              size="40"
-              class="t-mr-3"
-              color="rgb(74 222 128)"
-              :component="BoxMultiple24Filled"
-            />
-            <h2
-              class="t-text-slate-700 t-font-bold t-hidden sm:t-inline-flex dark:t-text-white"
+          <header
+            v-if="route.name !== 'login'"
+            class="t-items-start t-flex t-flex-col t-w-full"
+          >
+            <!-- header title -->
+            <div
+              class="t-w-full t-flex-row t-flex t-justify-between t-items-center t-shadow-md t-pt-2 md:t-pt-4 t-px-4"
             >
-              Exfil
-            </h2>
-          </span>
-          <span class="t-inline-flex t-items-center">
-            <NButton
-              @click="themeConfig.switchTheme"
-              circle
-              type="default"
-              secondary
-              strong
-            >
-              <template #icon
-                ><NIcon
-                  :color="
-                    themeConfig.theme.value == Theme.DARK ? '#F49D1A' : 'grey'
-                  "
-                  :component="
-                    themeConfig.theme.value == Theme.DARK ? WbSunnyFilled : Moon
-                  "
-              /></template>
-            </NButton>
-            <profileCardVue
-              :name="auth.userProfile.fullname"
-              :username="auth.userProfile.username"
-              :role="auth.userProfile.role"
-            />
-          </span>
-        </div>
-      </header>
-      <div class="t-px-3 t-py-2 md:t-px-4 md:t-py-4">
-        <NMessageProvider style="width: 100vw; height: 100%">
-          <NLoadingBarProvider>
+              <span class="t-inline-flex t-w-fit t-ml-1">
+                <!-- the cortex logo -->
+                <NIcon
+                  size="40"
+                  class="t-mr-3"
+                  color="rgb(74 222 128)"
+                  :component="BoxMultiple24Filled"
+                />
+                <h2
+                  class="t-text-slate-700 t-font-bold t-hidden sm:t-inline-flex dark:t-text-white"
+                >
+                  Exfil
+                </h2>
+              </span>
+              <span class="t-inline-flex t-items-center">
+                <NButton
+                  @click="themeConfig.switchTheme"
+                  circle
+                  type="default"
+                  secondary
+                  strong
+                >
+                  <template #icon
+                    ><NIcon
+                      :color="
+                        themeConfig.theme.value == Theme.DARK
+                          ? '#F49D1A'
+                          : 'grey'
+                      "
+                      :component="
+                        themeConfig.theme.value == Theme.DARK
+                          ? WbSunnyFilled
+                          : Moon
+                      "
+                  /></template>
+                </NButton>
+                <profileCardVue
+                  :name="auth.userProfile.fullname"
+                  :username="auth.userProfile.username"
+                  :role="auth.userProfile.role"
+                />
+              </span>
+            </div>
+          </header>
+          <div class="t-px-3 t-py-2 md:t-px-4 md:t-py-4">
             <NDialogProvider>
               <RouterView />
             </NDialogProvider>
-          </NLoadingBarProvider>
-        </NMessageProvider>
-      </div>
-    </div>
+          </div>
+        </div>
+      </NLoadingBarProvider>
+    </NMessageProvider>
   </NConfigProvider>
 </template>

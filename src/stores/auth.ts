@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { reactive, readonly } from "vue";
-import { Role, RoleMap } from "@/enums/roles";
+import { Role, ValuetoRoleMap } from "@/enums/roles";
 
 import { AxiosInstance } from "@/axios";
 import type { User } from "@/typings/globals";
@@ -12,6 +12,7 @@ export const useAuth = defineStore("auth", () => {
     // ! should default to a student
     role: Role.CUSTOMER,
     email: "clownystring@gmail.com",
+    id: "2019455750",
   });
 
   AxiosInstance.defaults.headers.common = {
@@ -32,9 +33,8 @@ export const useAuth = defineStore("auth", () => {
       firstName: string;
       lastName: string;
       username: string;
-
       role: number;
-      id: number;
+      id: string;
     } = (
       await AxiosInstance.post(
         "/refresh",
@@ -52,8 +52,8 @@ export const useAuth = defineStore("auth", () => {
     };
 
     userProfile.username = response.username;
-    userProfile.role = RoleMap[response.role];
-
+    userProfile.role = ValuetoRoleMap[response.role];
+    userProfile.id = response.id;
     userProfile.fullname = response.firstName + " " + response.lastName;
   }
 
@@ -63,9 +63,8 @@ export const useAuth = defineStore("auth", () => {
       name: string;
       access_token: string;
       username: string;
-
       role: number;
-      id: number;
+      id: string;
     } = (
       await AxiosInstance.post("/login", {
         username: username,
@@ -80,7 +79,8 @@ export const useAuth = defineStore("auth", () => {
     // store the token in localStorage
     // populate the state
     userProfile.username = username;
-    userProfile.role = RoleMap[response.role];
+    userProfile.role = ValuetoRoleMap[response.role];
+    userProfile.id = response.id;
     userProfile.fullname = response.name;
   }
 
@@ -88,6 +88,7 @@ export const useAuth = defineStore("auth", () => {
     userProfile.username = "";
 
     userProfile.role = Role.UNSET;
+    (userProfile.fullname = ""), (userProfile.id = "");
 
     // remove the token from axios headers
     AxiosInstance.defaults.headers.common = {

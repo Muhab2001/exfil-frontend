@@ -3,6 +3,12 @@
     <span
       class="t-inline-flex t-flex-row t-p-4 t-text-slate-700 t-items-center t-w-fit dark:t-text-white"
     >
+      <UserModal
+        mode="edit"
+        :target-role="auth.userProfile.role"
+        @closed="userModal.visible = false"
+        :visible="userModal.visible"
+      />
       <div>
         <span class="t-mx-3 t-hidden md:t-flex t-font-bold t-text-sm">{{
           props.name
@@ -15,8 +21,8 @@
   </NDropdown>
 </template>
 <script setup lang="ts">
-import { NAvatar, NDropdown } from "naive-ui";
-
+import { NAvatar, NDropdown, type DropdownOption } from "naive-ui";
+import { reactive, watch } from "vue";
 import {
   PersonCircleOutline as UserIcon,
   LogOutOutline as LogoutIcon,
@@ -24,7 +30,8 @@ import {
 import router from "@/router";
 import { useIcon } from "@/composables/useIcon";
 import { useAuth } from "@/stores/auth";
-import type { Role } from "@/enums/roles";
+import { Role } from "@/enums/roles";
+import UserModal from "./UserModal.vue";
 const iconUtils = useIcon();
 const auth = useAuth();
 
@@ -37,13 +44,15 @@ const handleSelect = (key: string) => {
   }
 };
 
-const profileOptions = [
-  {
-    label: "Update Profile",
+const userModal = reactive<{ visible: boolean }>({ visible: false });
+watch(
+  () => userModal,
+  () => {
+    console.log(userModal.visible);
+  }
+);
 
-    key: "editPic",
-    icon: iconUtils.renderIcon(UserIcon),
-  },
+const profileOptions: DropdownOption[] = [
   {
     label: "Sign out",
     key: "SignOut",
@@ -53,6 +62,19 @@ const profileOptions = [
     icon: iconUtils.renderIcon(LogoutIcon, { color: "red", size: "15px" }),
   },
 ];
+
+if (auth.userProfile.role !== Role.ADMIN) {
+  profileOptions.unshift({
+    label: "Update Profile",
+    key: "editPic",
+    icon: iconUtils.renderIcon(UserIcon),
+    props: {
+      onClick: () => {
+        userModal.visible = true;
+      },
+    },
+  });
+}
 
 const props = defineProps<{
   name: string;

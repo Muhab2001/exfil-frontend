@@ -6,6 +6,7 @@ export interface User {
   fullname: string;
   email: string;
   role: Role;
+  id: string;
 }
 
 export interface PackageTableRecord {
