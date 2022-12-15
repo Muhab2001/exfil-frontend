@@ -15,6 +15,14 @@
     size="large"
   >
     <NForm :model="userModel" ref="formRef" :rules="formRules">
+      <NFormItem path="id" label="User National ID">
+        <NInput
+          v-model:value="userModel.id"
+          max-length="30"
+          show-count
+          clearable
+        />
+      </NFormItem>
       <NFormItem path="username" label="Username">
         <NInput
           v-model:value="userModel.username"
@@ -59,22 +67,52 @@
       >
         <NFormItem path="role" label="User Role">
           <NSelect
+            class="t-w-full"
             v-model:value="userModel.role"
             :options="
-              Object.values(Role).map((rl) => ({ label: rl, value: rl }))
+              Object.values(DisplayRole).map((rl) => ({ label: rl, value: rl }))
             "
+            :render-label="renderLabel"
             clearable
           />
         </NFormItem>
-        <NFormItem path="salary" label="Salary">
-          <NInputNumber
-            v-model:value="userModel.salary"
-            :min="1"
-            type="salary"
-            clearable
-          />
-        </NFormItem>
+
+        <NCollapseTransition :show="userModel.role !== Role.CUSTOMER">
+          <NFormItem
+            v-if="userModel.role !== Role.CUSTOMER"
+            path="salary"
+            label="Salary"
+          >
+            <NInputNumber
+              v-model:value="userModel.salary"
+              :min="1"
+              type="salary"
+              clearable
+            />
+          </NFormItem>
+        </NCollapseTransition>
       </template>
+      <NCollapseTransition
+        :show="
+          userModel.role === Role.RETAIL_EMPLOYEE ||
+          props.targetRole === Role.RETAIL_EMPLOYEE
+        "
+      >
+        <NFormItem
+          path="retail_center"
+          label="Retail Center"
+          feedback="Assign the retail employee to a retail center"
+          class="t-my-5"
+        >
+          <NSelect
+            v-model:value="userModel.retail_center"
+            :min="1"
+            :options="retailCenters"
+            filterable
+            clearable
+          />
+        </NFormItem>
+      </NCollapseTransition>
     </NForm>
     <template #footer>
       <NButton @click="submitForm" class="t-mr-2" type="success"
@@ -87,7 +125,13 @@
 
 <script setup lang="ts">
 import { AxiosInstance } from "@/axios";
-import { Role, RoleToEndpointMap, ValuetoRoleMap } from "@/enums/roles";
+import {
+  DisplayRole,
+  Role,
+  RoleToEndpointMap,
+  ValuetoRoleMap,
+  RoleToValueMap,
+} from "@/enums/roles";
 import { useAuth } from "@/stores/auth";
 import {
   NForm,
@@ -101,28 +145,32 @@ import {
   useMessage,
   useLoadingBar,
   NInputNumber,
+  type SelectOption,
+  NCollapseTransition,
 } from "naive-ui";
-import { reactive, ref, watch, type Ref } from "vue";
+import { reactive, ref, watch, type VNodeChild, h, onBeforeMount } from "vue";
 
 interface UserModalProps {
-  user_id?: number;
+  user_id?: string;
   visible: boolean;
   mode: "edit" | "create";
   targetRole: Role;
 }
 
 interface UserModel {
+  id?: string;
   username: string;
   email: string;
   password: string;
   phone: string;
   role: Role;
   salary?: number;
+  retail_center?: string;
 }
 
-const modalState = reactive<{
-  secureEdit: boolean;
-}>({ secureEdit: false });
+// const modalState = reactive<{
+//   secureEdit: boolean;
+// }>({ secureEdit: false });
 
 const props = defineProps<UserModalProps>();
 const emits = defineEmits<{ (E: "closed"): void }>();
@@ -130,6 +178,16 @@ const auth = useAuth();
 
 const loading = useLoadingBar();
 const message = useMessage();
+
+const retailCenters = ref<SelectOption[]>([]);
+
+onBeforeMount(async () => {
+  const response = (await AxiosInstance.get("retail-center")).data;
+  retailCenters.value = response.map((rc: any) => ({
+    label: `${rc.name} ${rc.address.country},${rc.address.city}  ${rc.address.street}-${rc.address.zipcode}`,
+    value: rc.id,
+  }));
+});
 
 const formRef = ref<FormInst | null>(null);
 const userModel = ref<UserModel>({
@@ -144,6 +202,9 @@ const formRules = reactive<FormRules>({
   username: {
     required: true,
   },
+  id: {
+    required: props.mode === "create",
+  },
   email: {
     required: true,
   },
@@ -156,13 +217,30 @@ const formRules = reactive<FormRules>({
   role: {
     required: props.mode === "create",
   },
+  retail_center: {
+    required: userModel.value.role === Role.RETAIL_EMPLOYEE,
+  },
   salary: {
-    required:
-      userModel.value.role !== Role.CUSTOMER &&
-      props.mode === "create" &&
-      auth.userProfile.role === Role.ADMIN,
+    required: userModel.value.role === Role.CUSTOMER && props.mode === "create",
   },
 });
+
+const renderLabel = (option: SelectOption): VNodeChild => {
+  return [
+    h(
+      "div",
+      {
+        class: "t-w-full t-mr-8",
+        style: {
+          width: "1000px important",
+        },
+      },
+      {
+        default: () => [option.label as string],
+      }
+    ),
+  ];
+};
 
 const adminMode = reactive<{ targetId?: string }>({
   targetId: "",
@@ -185,20 +263,14 @@ const fetchData = async () => {
   }
 
   userModel.value.username = fetchedUser.user.username;
-  console.log(
-    fetchedUser.user.role,
-    Role.CUSTOMER,
-    fetchedUser.role === Role.CUSTOMER,
-    fetchedUser.role == Role.CUSTOMER
-  );
 
   if (ValuetoRoleMap[fetchedUser.user.role] === Role.CUSTOMER) {
     console.log("Hi customer");
 
-    // if customer
-    userModel.value.phone = fetchedUser.phone;
+    // if customer;
+
     userModel.value.email = fetchedUser.email;
-  } else if (fetchedUser.role != Role.UNSET) {
+  } else if (fetchedUser.role !== Role.UNSET) {
     // if not unset aka if employee
     userModel.value.phone = fetchedUser.company_phone;
     userModel.value.email = fetchedUser.company_email;
@@ -206,8 +278,15 @@ const fetchData = async () => {
       adminMode.targetId = fetchedUser.user.id;
     }
 
+    console.log("HI", ValuetoRoleMap[fetchedUser.role], fetchedUser);
+    if (ValuetoRoleMap[fetchedUser.user.role] === Role.RETAIL_EMPLOYEE) {
+      userModel.value.retail_center = fetchedUser.retail_center.id;
+    }
+
     console.log(userModel.value, fetchedUser.phone);
   }
+  userModel.value.role = ValuetoRoleMap[fetchedUser.user.role];
+  userModel.value.id = fetchedUser.userId;
 };
 
 watch(
@@ -223,9 +302,19 @@ watch(
           phone: "",
           role: Role.CUSTOMER,
         };
+        console.log("ROLES", userModel.value.role === Role.CUSTOMER);
       } else {
         // pre-fill all fields with passed data
         await fetchData();
+        console.log(
+          userModel.value.role === Role.RETAIL_EMPLOYEE ||
+            props.targetRole === Role.RETAIL_EMPLOYEE,
+          "FETCHED ROLE",
+          userModel.value.role,
+          "TARGET",
+          props.targetRole,
+          Role.RETAIL_EMPLOYEE
+        );
       }
     }
   }
@@ -234,57 +323,77 @@ watch(
 const submitForm = () => {
   loading.start();
   formRef.value?.validate(async (errors) => {
-    if (props.mode === "create") {
-      if (!errors) {
-        await AxiosInstance.post("user", {
-          username: userModel.value.username,
-          password: userModel.value.password,
-          phone: userModel.value.phone,
-          email: userModel.value.email,
-          role: userModel.value.role,
-        });
-        loading.finish();
-      } else {
-        message.error("User creation failed");
-        loading.error();
-        emits("closed");
-      }
-    } else if (props.mode === "edit") {
-      if (!errors) {
-        const reqBody: any = {
-          username: userModel.value.username,
+    try {
+      if (props.mode === "create") {
+        if (!errors) {
+          const reqBody: any = {
+            username: userModel.value.username,
+            password: userModel.value.password,
+            phone_number: userModel.value.phone,
+            email: userModel.value.email,
+            role: RoleToValueMap[userModel.value.role],
+            id: userModel.value.id,
+          };
 
-          phone: userModel.value.phone,
-          email: userModel.value.email,
-        };
+          if (userModel.value.role !== Role.CUSTOMER) {
+            reqBody["salary"] = userModel.value.salary;
+          }
+          if (userModel.value.role === Role.RETAIL_EMPLOYEE) {
+            reqBody["retail_center"] = userModel.value.retail_center;
+          }
+          await AxiosInstance.post("user", reqBody);
 
-        // only admins can change the salary
-        if (auth.userProfile.role === Role.ADMIN) {
-          reqBody["salary"] = userModel.value.salary;
-
-          await AxiosInstance.patch(
-            "user/" +
-              RoleToEndpointMap[userModel.value.role] +
-              "/" +
-              adminMode.targetId,
-            reqBody
-          );
+          message.success("User created successfully");
+          loading.finish();
+          emits("closed");
         } else {
-          await AxiosInstance.patch(
-            "user/" +
-              RoleToEndpointMap[userModel.value.role] +
-              "/" +
-              auth.userProfile.id,
-            reqBody
-          );
+          message.error("User creation failed");
+          loading.error();
         }
-        message.success("User edit succsessful");
-        loading.finish();
-        emits("closed");
-      } else {
-        message.error("User Edit failed");
-        loading.error();
+      } else if (props.mode === "edit") {
+        if (!errors) {
+          const reqBody: any = {
+            username: userModel.value.username,
+
+            phone_number: userModel.value.phone,
+            email: userModel.value.email,
+          };
+
+          if (userModel.value.role === Role.RETAIL_EMPLOYEE) {
+            reqBody["retail_center"] = userModel.value.retail_center;
+          }
+
+          // only admins can change the salary
+          if (auth.userProfile.role === Role.ADMIN) {
+            reqBody["salary"] = userModel.value.salary;
+
+            await AxiosInstance.patch(
+              "user/" +
+                RoleToEndpointMap[userModel.value.role] +
+                "/" +
+                adminMode.targetId,
+              reqBody
+            );
+          } else {
+            await AxiosInstance.patch(
+              "user/" +
+                RoleToEndpointMap[userModel.value.role] +
+                "/" +
+                auth.userProfile.id,
+              reqBody
+            );
+          }
+          message.success("User edit succsessful");
+          loading.finish();
+          emits("closed");
+        } else {
+          message.error("User Edit failed");
+          loading.error();
+        }
       }
+    } catch (e) {
+      message.error("User Form Submission failed");
+      loading.error();
     }
   });
 };

@@ -38,7 +38,7 @@
       </span>
     </section>
     <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Order Packages</h1>
-    <section>
+    <section class="t-flex t-flex-wrap">
       <PackageCard
         v-for="(pkg, index) in order.packages"
         :key="index"
@@ -62,16 +62,45 @@
         ></NSteps>
       </NSpace>
     </div>
-
-    <NDivider title-placement="left"
-      ><h3 class="t-my-5">Add a new intermediate location</h3>
-    </NDivider>
     <NForm
       class="t-mb-3"
       ref="orderFormRef"
       :rules="orderRules"
       :model="orderModelRef"
     >
+      <NFormItem path="transport" label="Transportation Type">
+        <NSelect
+          v-model:value="orderModelRef.transport"
+          :options="
+            Object.values(EventType).map((ev) => ({ label: ev, value: ev }))
+          "
+          :render-label="renderLabel"
+        />
+      </NFormItem>
+      <NFormItem path="loacation_type" label="Location Type">
+        <NSelect
+          v-model:value="orderModelRef.location_type"
+          :options="
+            Object.values(PackageLocationType).map((ev, index) => ({
+              label: locationTypeMapper(ev as PackageLocationType),
+              value: index,
+            }))
+          "
+          :render-label="renderLabel"
+        />
+      </NFormItem>
+      <NButton
+        class="t-p-4 t-w-full"
+        secondary
+        strong
+        @click="markDelivered"
+        type="success"
+        >Confirm Arrival</NButton
+      >
+      <NDivider>Or</NDivider>
+
+      <h2 class="t-my-5 t-font-medium">Add a new intermediate location</h2>
+
       <NFormItem path="country" label="Country">
         <NInput
           v-model:value="orderModelRef.country"
@@ -97,7 +126,7 @@
         />
       </NFormItem>
       <NFormItem path="zipcode" label="Zipcode">
-        <NInputNumber v-model:value="orderModelRef.zipcode" min="0" clearable />
+        <NInput v-model:value="orderModelRef.zipcode" min="0" clearable />
       </NFormItem>
       <NFormItem path="transport" label="Transportation Type">
         <NSelect
@@ -136,6 +165,7 @@ import {
   PackageStatus,
   EventType,
   PackageLocationType,
+  PackageLocationTypeMapper,
   locationTypeMapper,
 } from "@/enums/packages";
 import type {
@@ -185,10 +215,10 @@ interface OrderState {
 interface OrderModel {
   city: string;
   country: string;
-  zipcode: number;
+  zipcode: string;
   street: string;
   transport: EventType.Truck;
-  location_type: PackageLocationType;
+  location_type: number;
   statuses: { id: number; status: PackageStatus }[];
 }
 
@@ -201,10 +231,10 @@ const orderModelRef = ref<OrderModel>({
   city: "",
   country: "",
   statuses: [],
-  zipcode: 0,
+  zipcode: "",
   street: "",
   transport: EventType.Truck,
-  location_type: PackageLocationType.WAREHOUSE,
+  location_type: 0,
 });
 
 const orderRules: FormRules = {
@@ -225,7 +255,7 @@ const orderRules: FormRules = {
   },
   zipcode: {
     required: true,
-    type: "integer",
+    type: "string",
     trigger: "blur",
   },
   transport: {
@@ -328,23 +358,26 @@ const renderLabel = (option: SelectOption): VNodeChild => {
   ];
 };
 
+const markDelivered = async () => {
+  console.log(order.value);
+
+  orderModelRef.value = {
+    city: order.value.destination.city,
+    country: order.value.destination.country,
+    street: order.value.destination.street,
+    zipcode: order.value.destination.zipcode,
+    transport: orderModelRef.value.transport,
+    location_type: orderModelRef.value.location_type,
+    statuses: orderModelRef.value.statuses,
+  };
+
+  await sendOrder();
+};
+
 const submitForm = () => {
   loading.start();
   orderFormRef.value?.validate(async (errors) => {
     if (!errors) {
-      const statuses: { [id: number]: PackageStatus } = {};
-      orderModelRef.value.statuses.forEach((element) => {
-        statuses[element.id] = element.status;
-      });
-      await AxiosInstance.post("order/location/" + props.order_id, {
-        locationType: orderModelRef.value.location_type,
-        eventType: orderModelRef.value.transport,
-        city: orderModelRef.value.city,
-        country: orderModelRef.value.country,
-        street: orderModelRef.value.street,
-        zipcode: orderModelRef.value.zipcode.toString(),
-        statuses: statuses,
-      });
       message.success("Location recorded Succesfully!");
       emits("closed");
     } else {
@@ -352,6 +385,23 @@ const submitForm = () => {
     }
   });
   loading.finish();
+};
+
+const sendOrder = async () => {
+  const statuses: { [id: number]: PackageStatus } = {};
+  orderModelRef.value.statuses.forEach((element) => {
+    statuses[element.id] = element.status;
+  });
+  console.log(orderModelRef.value);
+  await AxiosInstance.post("order/location/" + props.order_id, {
+    locationType: orderModelRef.value.location_type,
+    eventType: orderModelRef.value.transport,
+    city: orderModelRef.value.city,
+    country: orderModelRef.value.country,
+    street: orderModelRef.value.street,
+    zipcode: orderModelRef.value.zipcode.toString(),
+    statuses: statuses,
+  });
 };
 </script>
 

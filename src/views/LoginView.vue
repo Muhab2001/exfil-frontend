@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AxiosInstance } from "@/axios";
 import { useAuth } from "@/stores/auth";
+import { BoxMultiple24Filled } from "@vicons/fluent";
 import axios from "axios";
 import {
   type FormValidationError,
@@ -11,6 +12,7 @@ import {
   useMessage,
   type FormInst,
   type FormRules,
+  NIcon,
 } from "naive-ui";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -56,13 +58,10 @@ const submitForm = () => {
     async (errors: Array<FormValidationError> | undefined) => {
       if (!errors) {
         try {
-          // console.log(
-          //   await axios.post("/login", {
-          //     username: model.value.username,
-          //     password: model.value.password,
-          //   })
-          // );
-          // await auth.login(model.value.username!, model.value.password!);
+          await auth.login(
+            model.value.username?.trim()!,
+            model.value.password!
+          );
           messenger.success("Successful sign in!");
           router.push("/home");
         } catch (e: any) {
@@ -84,8 +83,15 @@ const submitForm = () => {
   >
     <header class="t-flex-col t-items-center t-text-center">
       <h1
-        class="t-font-sans t-font-bold t-m-auto t-text-[4rem] dark:t-text-white"
+        class="t-font-sans t-font-bold t-m-auto t-text-[4rem] dark:t-text-white t-flex t-items-center"
       >
+        <span>
+          <NIcon
+            size="60"
+            class="t-mr-5 t-relative t-top-2"
+            color="rgb(74 222 128)"
+            :component="BoxMultiple24Filled"
+        /></span>
         Exfil
       </h1>
       <p class="t-mb-10 dark:t-text-white">

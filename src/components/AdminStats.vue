@@ -14,10 +14,12 @@
       label="Total Packages"
       :value="stats.total_packages"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(74 222 128)" :component="Box16Filled" /></template
     ></NStatistic>
     <NStatistic label="Confirmed Payments" :value="stats.confirmed_payments">
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(74 222 128)" :component="Money16Filled" /></template
     ></NStatistic>
   </NCard>
 
@@ -36,28 +38,32 @@
       label="Regular Packages"
       :value="stats.categories.Regular"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="grey" :component="Box16Filled" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Fragile Packages"
       :value="stats.categories.Fragile"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(96 165 250)" :component="Fragile" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Liquid Packages"
       :value="stats.categories.Liquid"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(250 204 21)" :component="LocalDrinkRound" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Chemical Packages"
       :value="stats.categories.Chemical"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(248 113 113)" :component="Biohazard" /></template
     ></NStatistic>
   </NCard>
   <NCard
@@ -75,28 +81,36 @@
       label="Delivered Packages"
       :value="stats.statuses.Delivered"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon
+          color="rgb(96 165 250)"
+          :component="DirectionsTransitFilledFilled" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Transit Packages"
       :value="stats.statuses.Transit"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(248 113 113)" :component="Biohazard" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Damaged Packages"
       :value="stats.statuses.Damaged"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon color="rgb(250 204 21)" :component="Warning24Filled" /></template
     ></NStatistic>
     <NStatistic
       class="t-mr-10"
       label="Lost Packages"
       :value="stats.statuses.Lost"
     >
-      <template #prefix></template
+      <template #suffix>
+        <NIcon
+          color="rgb(248 113 113)"
+          :component="ErrorCircle24Filled" /></template
     ></NStatistic>
   </NCard>
 </template>
@@ -104,7 +118,27 @@
 <script setup lang="ts">
 import { AxiosInstance } from "@/axios";
 import type { PackageCategory, PackageStatus } from "@/enums/packages";
-import { NCol, NRow, NStatistic, NCard, NTabs, NTabPane } from "naive-ui";
+import { Fragile } from "@vicons/carbon";
+import { Biohazard } from "@vicons/fa";
+import {
+  Box16Filled,
+  ErrorCircle24Filled,
+  Money16Filled,
+  Warning24Filled,
+} from "@vicons/fluent";
+import {
+  DirectionsTransitFilledFilled,
+  LocalDrinkRound,
+} from "@vicons/material";
+import {
+  NCol,
+  NRow,
+  NStatistic,
+  NCard,
+  NTabs,
+  NTabPane,
+  NIcon,
+} from "naive-ui";
 import { reactive, watch, watchEffect, onBeforeMount } from "vue";
 import PackagesTableView from "./PackagesTableView.vue";
 

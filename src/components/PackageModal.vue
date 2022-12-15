@@ -243,7 +243,7 @@ const pkgmodel = reactive<PackageModel>({
 const fetchData = async () => {
   loading.start();
   const pkg = (await AxiosInstance.get(`package/${props.packageId}`)).data;
-
+  loading.finish();
   // package model
   pkgmodel.category = pkg.category;
   pkgmodel.status = pkg.status;
@@ -269,8 +269,6 @@ const fetchData = async () => {
   staticStatus.sender = pkg.delivery_order.sender.user.username;
   staticStatus.reciever = pkg.delivery_order.recipient.user.username;
   staticStatus.entry_timestamp = new Date(pkg.entry_timestamp).toLocaleString();
-
-  loading.finish();
 };
 
 const renderLabel = (option: SelectOption): VNodeChild => {

@@ -22,6 +22,7 @@ import {
   NDataTable,
   NSpace,
   NTag,
+  NIcon,
   useLoadingBar,
   type DataTableBaseColumn,
   type DataTableColumns,
@@ -36,6 +37,7 @@ import type {
   TableColumn,
 } from "naive-ui/es/data-table/src/interface";
 import {
+  Add12Filled,
   Box16Filled,
   Delete16Filled,
   Edit16Filled,
@@ -83,9 +85,7 @@ const emits = defineEmits<{
   (e: "updateCity", cities?: string[]): void;
 }>();
 // util hooks
-const auth = useAuth();
 const iconUtils = useIcon();
-const loading = useLoadingBar();
 
 const customerColumn: TableBaseColumn<PackageRecord> = {
   title: "Sender",
@@ -200,8 +200,8 @@ const tableState = reactive<PackageTableMetaData>({
               h(
                 NButton,
                 {
-                  size: "small",
-                  round: true,
+                  size: "medium",
+                  circle: true,
                   type: "primary",
                   secondary: true,
                   strong: true,
@@ -231,8 +231,8 @@ const tableState = reactive<PackageTableMetaData>({
               h(
                 NButton,
                 {
-                  size: "small",
-                  round: true,
+                  size: "medium",
+                  circle: true,
                   type: "error",
                   secondary: true,
                   strong: true,
@@ -283,6 +283,8 @@ const reactiveCity = reactive(cityColumn);
 
 const tableData = ref<PackageRecord[]>([]);
 const sortUtils = useSortUtils();
+
+const orderModalState = () => {};
 
 onBeforeMount(async () => {
   // TODO: replace with the correct api call for the backend for both unique cities
@@ -371,6 +373,7 @@ const handlePageChange = async (currentPage: number) => {
   await query();
   // switch the pagination state, and fire the query function
 };
+
 // handling filter change
 const handleFiltersChange = async (
   filters: DataTableFilterState,

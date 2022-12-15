@@ -3,7 +3,6 @@ import type { Role } from "@/enums/roles";
 
 export interface User {
   username: string;
-  fullname: string;
   email: string;
   role: Role;
   id: string;
@@ -43,11 +42,8 @@ export interface OrderModel {
   country: string;
   zipcode: number;
   street: string;
-  delivery_email: string;
-  recipient: {
-    email: string;
-  };
-  sender: {
-    email: string;
-  };
+  delivery_employee: string;
+  recipient: string;
+  sender: string;
+  retail_employee_id?: string;
 }

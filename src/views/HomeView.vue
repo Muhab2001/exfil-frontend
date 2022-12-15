@@ -16,10 +16,20 @@
 <script setup lang="ts">
 import { Role } from "@/enums/roles";
 import { useAuth } from "@/stores/auth";
-import AdminPackages from "./admin/AdminPackages.vue";
-import CustomerPackages from "./customer/CustomerPackages.vue";
-import DeliveryPackages from "./delivery-employee/DeliveryPackages.vue";
-import RetailPackage from "./retail-employee/RetailPackage.vue";
+import { defineAsyncComponent } from "vue";
+
+const AdminPackages = defineAsyncComponent(
+  () => import("./admin/AdminPackages.vue")
+);
+const CustomerPackages = defineAsyncComponent(
+  () => import("./customer/CustomerPackages.vue")
+);
+const DeliveryPackages = defineAsyncComponent(
+  () => import("./delivery-employee/DeliveryPackages.vue")
+);
+const RetailPackage = defineAsyncComponent(
+  () => import("./retail-employee/RetailPackage.vue")
+);
 
 const auth = useAuth();
 </script>

@@ -22,25 +22,38 @@ const props = defineProps<{ header: boolean }>();
 const auth = useAuth();
 const router = useRouter();
 const themeConfig = useThemeConfig();
+const route = useRoute();
 
-// onBeforeMount(() => {
-//   router.beforeEach(async (to, from, next) => {
-//     if (to.name !== "login" && auth.userProfile.username === "") {
-//       if (sessionStorage.getItem("accessToken")) {
-//         try {
-//           await auth.refresh(sessionStorage.getItem("accessToken")!);
-//           next();
-//         } catch (e) {
-//           next({ name: "login" });
-//         }
-//       } else {
-//         next();
-//       }
-//     } else {
-//       next();
-//     }
-//   });
-// });
+onBeforeMount(() => {
+  router.beforeEach(async (to, from, next) => {
+    if (to.name !== "login" && auth.userProfile.username === "") {
+      if (sessionStorage.getItem("accessToken")) {
+        try {
+          await auth.refresh(sessionStorage.getItem("accessToken")!);
+          next();
+        } catch (e) {
+          console.log(e);
+
+          next({ name: "login" });
+        }
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  });
+});
+
+watchEffect(() => {
+  if (
+    route.name !== "login" &&
+    auth.userProfile.username === "" &&
+    !sessionStorage.getItem("accessToken")
+  ) {
+    router.push("/");
+  }
+});
 
 document
   .querySelector("html")
@@ -58,8 +71,6 @@ watchEffect(() => {
     document.querySelector("html")?.classList.remove("t-dark");
   }
 });
-
-const route = useRoute();
 </script>
 
 <template>
@@ -118,7 +129,6 @@ const route = useRoute();
                   /></template>
                 </NButton>
                 <profileCardVue
-                  :name="auth.userProfile.fullname"
                   :username="auth.userProfile.username"
                   :role="auth.userProfile.role"
                 />

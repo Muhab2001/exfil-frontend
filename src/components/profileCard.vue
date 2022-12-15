@@ -11,9 +11,6 @@
       />
       <div>
         <span class="t-mx-3 t-hidden md:t-flex t-font-bold t-text-sm">{{
-          props.name
-        }}</span>
-        <span class="t-mx-3 t-hidden md:t-flex t-font-medium t-text-xs">{{
           props.username
         }}</span>
       </div>
@@ -62,22 +59,28 @@ const profileOptions: DropdownOption[] = [
     icon: iconUtils.renderIcon(LogoutIcon, { color: "red", size: "15px" }),
   },
 ];
+console.log(auth.userProfile.role, Role.ADMIN);
 
-if (auth.userProfile.role !== Role.ADMIN) {
-  profileOptions.unshift({
-    label: "Update Profile",
-    key: "editPic",
-    icon: iconUtils.renderIcon(UserIcon),
-    props: {
-      onClick: () => {
-        userModal.visible = true;
-      },
-    },
-  });
-}
+watch(
+  () => auth.userProfile.role,
+  () => {
+    if (auth.userProfile.role !== Role.ADMIN) {
+      console.log("Not for admins!");
 
+      profileOptions.unshift({
+        label: "Update Profile",
+        key: "editPic",
+        icon: iconUtils.renderIcon(UserIcon),
+        props: {
+          onClick: () => {
+            userModal.visible = true;
+          },
+        },
+      });
+    }
+  }
+);
 const props = defineProps<{
-  name: string;
   username: string;
   role: Role;
 }>();

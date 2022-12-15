@@ -1,6 +1,7 @@
 <template>
   <div>
     <OrderCreateModal
+      :role="Role.RETAIL_EMPLOYEE"
       :visible="orderModal.visible"
       :mode="orderModal.mode"
       :id="orderModal.id"
@@ -24,7 +25,6 @@
             openModal();
           }
         "
-        class=""
       >
         <template #icon>
           <NIcon :component="Add12Filled" />
@@ -39,6 +39,7 @@
 import { AxiosInstance } from "@/axios";
 import OrderCard from "@/components/OrderCard.vue";
 import OrderCreateModal from "@/components/OrderCreateModal.vue";
+import { Role } from "@/enums/roles";
 import { Add12Filled } from "@vicons/fluent";
 import { NButton, NIcon } from "naive-ui";
 import { reactive, onBeforeMount, ref } from "vue";
@@ -72,8 +73,8 @@ const fetchOrders = async () => {
   orders.value = response.map((order: any) => ({
     id: order.id,
     recipient: {
-      customer: order.recipient.user.username,
-      email: order.recipient.email,
+      customer: order.recipient ? order.recipient.user.username : "",
+      email: order.recipient ? order.recipient.email : "",
     },
     role: "Recipient",
     entry_timestamp: new Date(order.payment.issue_date).toLocaleString(),

@@ -166,35 +166,70 @@
         <NInputNumber v-model:value="orderModelRef.zipcode" clearable />
       </NFormItem>
       <NDivider />
-      <h2 class="t-mb-4">Recipient</h2>
+      <h2 class="t-mb-4">Sender</h2>
 
-      <NFormItem path="recipient.email" label="Email">
-        <NInput
-          v-model:value="orderModelRef.recipient.email"
+      <NFormItem path="sender" label="Select sender customer">
+        <NSelect
+          class="t-mt-4"
+          v-model:value="orderModelRef.sender"
           type="text"
+          filterable
           clearable
+          :options="customers"
         />
       </NFormItem>
 
       <NDivider />
-      <h2 class="t-mb-4">Sender</h2>
+      <h2 class="t-mb-4">Recipient</h2>
 
-      <NFormItem class="t-mb-2" path="recipient.email" label="Email">
-        <NInput
-          v-model:value="orderModelRef.sender.email"
+      <NFormItem
+        class="t-mb-2"
+        path="recipient"
+        label="Select Recipient customer"
+      >
+        <NSelect
+          class="t-mt-4"
+          v-model:value="orderModelRef.recipient"
           type="text"
+          filterable
           clearable
+          :options="customers"
         />
       </NFormItem>
       <NDivider />
       <h2 class="t-mb-4">Delivery Employee</h2>
-      <NFormItem class="t-mb-2" path="delivery_email" label="Email">
-        <NInput
-          v-model:value="orderModelRef.delivery_email"
+      <NFormItem
+        class="t-mb-2"
+        path="delivery_employee"
+        label="Select Delivery Employee user"
+      >
+        <NSelect
+          class="t-mt-4"
+          v-model:value="orderModelRef.delivery_employee"
           type="text"
+          filterable
           clearable
+          :options="deliveryEmployees"
         />
       </NFormItem>
+      <NDivider />
+      <template v-if="props.role === Role.ADMIN">
+        <h2 class="t-mb-4">Retail Employee</h2>
+        <NFormItem
+          class="t-mb-2"
+          path="delivery_email"
+          label="Select Retail Employee assigned for this order"
+        >
+          <NSelect
+            class="t-mt-4"
+            v-model:value="orderModelRef.retail_employee_id"
+            type="text"
+            filterable
+            clearable
+            :options="retailEmployees"
+          />
+        </NFormItem>
+      </template>
     </NForm>
     <template #footer>
       <NButton @click="submitForm" class="t-mr-2" type="success"
@@ -208,6 +243,7 @@
 <script setup lang="ts">
 import { AxiosInstance } from "@/axios";
 import { PackageCategory, PackageStatus } from "@/enums/packages";
+import { Role } from "@/enums/roles";
 import type { OrderModel } from "@/typings/globals";
 import { Add12Filled, Delete24Filled } from "@vicons/fluent";
 import {
@@ -227,12 +263,20 @@ import {
   type SelectOption,
   type FormItemRule,
 } from "naive-ui";
-import { ref, watch, onBeforeUpdate, type VNodeChild, h } from "vue";
+import {
+  ref,
+  watch,
+  onBeforeUpdate,
+  onBeforeMount,
+  type VNodeChild,
+  h,
+} from "vue";
 
 interface OrderModalProps {
   visible: boolean;
   mode: "edit" | "create";
   id?: number;
+  role: Role.ADMIN | Role.RETAIL_EMPLOYEE;
 }
 
 interface PackageModel {
@@ -245,7 +289,41 @@ interface PackageModel {
   insurance_amount: number;
 }
 
+const props = defineProps<OrderModalProps>();
+const emits = defineEmits<{
+  (e: "closed"): void;
+}>();
+
 const packageRefs = ref<Array<FormInst | null>>([]);
+
+const retailEmployees = ref<SelectOption[]>([]);
+
+const deliveryEmployees = ref<SelectOption[]>([]);
+
+const customers = ref<SelectOption[]>([]);
+
+onBeforeMount(async () => {
+  if (props.role === Role.ADMIN) {
+    const response = (await AxiosInstance.get("user/retail-employees")).data;
+    retailEmployees.value = response.map((emp: any) => ({
+      label: emp.user.username,
+      value: emp.userId,
+    }));
+  }
+
+  const deliveryResponse = (await AxiosInstance.get("user/delivery-employees"))
+    .data;
+  deliveryEmployees.value = deliveryResponse.map((emp: any) => ({
+    label: emp.user.username,
+    value: emp.userId,
+  }));
+
+  const customerResponse = (await AxiosInstance.get("user/customers")).data;
+  customers.value = customerResponse.map((emp: any) => ({
+    label: emp.user.username,
+    value: emp.userId,
+  }));
+});
 
 onBeforeUpdate(() => {
   packageRefs.value = [];
@@ -269,13 +347,9 @@ const orderModelRef = ref<OrderModel>({
   country: "",
   zipcode: 0,
   street: "",
-  recipient: {
-    email: "",
-  },
-  sender: {
-    email: "",
-  },
-  delivery_email: "",
+  recipient: "",
+  sender: "",
+  delivery_employee: "",
 });
 
 const orderFormRef = ref<FormInst | null>(null);
@@ -357,22 +431,18 @@ const orderRules: FormRules = {
     trigger: "blur",
   },
   recipient: {
-    email: {
-      required: true,
-      type: "email",
-      trigger: "blur",
-    },
+    required: true,
+    type: "string",
+    trigger: "blur",
   },
   sender: {
-    email: {
-      required: true,
-      type: "email",
-      trigger: "blur",
-    },
-  },
-  delivery_mail: {
     required: true,
-    type: "email",
+    type: "string",
+    trigger: "blur",
+  },
+  delivery_employee: {
+    required: true,
+    type: "string",
     trigger: "blur",
   },
   zipcode: {
@@ -380,12 +450,12 @@ const orderRules: FormRules = {
     type: "integer",
     trigger: "blur",
   },
+  retail_employee_id: {
+    required: props.role === Role.ADMIN,
+    type: "string",
+    trigger: "blur",
+  },
 };
-
-const props = defineProps<OrderModalProps>();
-const emits = defineEmits<{
-  (e: "closed"): void;
-}>();
 
 watch(
   () => props.visible,
@@ -412,13 +482,9 @@ watch(
           country: "",
           zipcode: 0,
           street: "",
-          recipient: {
-            email: "",
-          },
-          sender: {
-            email: "",
-          },
-          delivery_email: "",
+          recipient: "",
+          sender: "",
+          delivery_employee: "",
         };
         // empty all fields
       } else {
@@ -431,13 +497,9 @@ watch(
           country: response.final_destination.country,
           zipcode: response.final_destination.zipcode,
           street: response.final_destination.street,
-          recipient: {
-            email: response.recipient.email,
-          },
-          sender: {
-            email: response.sender.email,
-          },
-          delivery_email: response.deliveryEmployee.company_email,
+          recipient: response.recipient ? response.recipient.userId : "",
+          sender: response.sender ? response.sender.userId : "",
+          delivery_employee: response.deliveryEmployee.userId,
         };
 
         pkgmodelRefs.value = response.packages.map((pkg: any) => ({
@@ -489,7 +551,7 @@ const renderLabel = (option: SelectOption): VNodeChild => {
 };
 
 const deletePackage = (index: number) => {
-  pkgmodelRefs.value.splice;
+  pkgmodelRefs.value.splice(index, 1);
 };
 
 const submitForm = async () => {
@@ -512,17 +574,23 @@ const submitForm = async () => {
   if (valid) {
     try {
       if (props.mode === "create") {
-        await AxiosInstance.post("order", {
+        const reqBody: any = {
           packages: pkgmodelRefs.value,
           payment: orderModelRef.value.payment,
           city: orderModelRef.value.city,
           country: orderModelRef.value.country,
           zipcode: orderModelRef.value.zipcode.toString(),
           street: orderModelRef.value.street,
-          sender: orderModelRef.value.sender.email,
-          recipient: orderModelRef.value.recipient.email,
-          delivery_employee: orderModelRef.value.delivery_email,
-        });
+          sender: orderModelRef.value.sender,
+          recipient: orderModelRef.value.recipient,
+          delivery_employee: orderModelRef.value.delivery_employee,
+        };
+
+        if (props.role === Role.ADMIN) {
+          reqBody["retail_employee_id"] =
+            orderModelRef.value.retail_employee_id;
+        }
+        await AxiosInstance.post("order", reqBody);
         message.success("Order Created Successfully!");
       } else if (props.mode === "edit") {
         await AxiosInstance.put("order/" + props.id, {
@@ -531,9 +599,9 @@ const submitForm = async () => {
           country: orderModelRef.value.country,
           zipcode: orderModelRef.value.zipcode.toString(),
           street: orderModelRef.value.street,
-          sender: orderModelRef.value.sender.email,
-          recipient: orderModelRef.value.recipient.email,
-          delivery_employee: orderModelRef.value.delivery_email,
+          sender: orderModelRef.value.sender,
+          recipient: orderModelRef.value.recipient,
+          delivery_employee: orderModelRef.value.delivery_employee,
         });
         message.success("Order Updated Successfully!");
       }

@@ -18,6 +18,12 @@ export enum PackageLocationType {
   RECIPIENT_LOCATION = "Recipient Location",
 }
 
+export const PackageLocationTypeMapper = {
+  Airport: 0,
+  Warehouse: 1,
+  "Recipient Location": 2,
+};
+
 export function locationTypeMapper(index: PackageLocationType) {
   switch (index) {
     case PackageLocationType.AIRPORT:

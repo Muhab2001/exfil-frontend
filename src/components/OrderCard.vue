@@ -10,7 +10,7 @@
         Order <span class="t-text-green-400">#{{ props.id }}</span>
       </h3>
     </template>
-    <section>
+    <section v-if="props.customer">
       <div class="t-text-lg t-mb-2 t-font-medium">{{ props.role }}</div>
       <div class="t-text-sm">{{ props.customer.username }}</div>
       <span class="t-mt-4 t-text-xs t-text-gray-400">{{

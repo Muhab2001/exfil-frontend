@@ -7,35 +7,19 @@ import type { User } from "@/typings/globals";
 
 export const useAuth = defineStore("auth", () => {
   const userProfile = reactive<User>({
-    username: "Testing admin",
-    fullname: "admin bebob",
+    username: "",
     // ! should default to a student
     role: Role.CUSTOMER,
-    email: "clownystring@gmail.com",
-    id: "2019455750",
+    email: "",
+    id: "",
   });
-
-  AxiosInstance.defaults.headers.common = {
-    Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIwMTk0NTU3NTAiLCJyb2xlIjoxLCJpYXQiOjE2NzEwODc1NDIsImV4cCI6MTY3MTY5MjM0Mn0.Tyxw2tPzcc2WLBLM48mmINSxJspyW3fGKk4sgt_VO2s`,
-  };
-
-  sessionStorage.setItem(
-    "accessToken",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIwMTk0NTU3NTAiLCJyb2xlIjoxLCJpYXQiOjE2NzEwODc1NDIsImV4cCI6MTY3MTY5MjM0Mn0.Tyxw2tPzcc2WLBLM48mmINSxJspyW3fGKk4sgt_VO2s"
-  );
 
   // TODO proper fetching for the token
 
   async function refresh(access_token: string) {
     console.log("REFRESHING");
 
-    const response: {
-      firstName: string;
-      lastName: string;
-      username: string;
-      role: number;
-      id: string;
-    } = (
+    const response = (
       await AxiosInstance.post(
         "/refresh",
         {},
@@ -54,7 +38,6 @@ export const useAuth = defineStore("auth", () => {
     userProfile.username = response.username;
     userProfile.role = ValuetoRoleMap[response.role];
     userProfile.id = response.id;
-    userProfile.fullname = response.firstName + " " + response.lastName;
   }
 
   async function login(username: string, password: string): Promise<void> {
@@ -81,14 +64,13 @@ export const useAuth = defineStore("auth", () => {
     userProfile.username = username;
     userProfile.role = ValuetoRoleMap[response.role];
     userProfile.id = response.id;
-    userProfile.fullname = response.name;
   }
 
   function logout(): void {
     userProfile.username = "";
 
     userProfile.role = Role.UNSET;
-    (userProfile.fullname = ""), (userProfile.id = "");
+    userProfile.id = "";
 
     // remove the token from axios headers
     AxiosInstance.defaults.headers.common = {

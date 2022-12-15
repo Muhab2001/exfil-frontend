@@ -52,8 +52,8 @@ const fetchOrders = async () => {
   orders.value = response.map((order: any) => ({
     id: order.id,
     customer: {
-      username: order.recipient.user.username,
-      email: order.recipient.email,
+      customer: order.recipient ? order.recipient.user.username : "",
+      email: order.recipient ? order.recipient.email : "",
     },
     role: "Recipient",
     entry_timestamp: new Date(order.payment.issue_date).toLocaleString(),
