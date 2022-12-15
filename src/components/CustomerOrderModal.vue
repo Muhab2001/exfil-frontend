@@ -101,27 +101,35 @@
       /></template>
       Pay for order</NButton
     >
-    <p v-if="order.isOTPSent">
-      You can request another OTP after 3 minutes of OTP request
-    </p>
-    <NForm
-      v-if="order.isOTPSent"
-      :model="otpModel"
-      :rules="otpModelRules"
-      ref="otpRef"
-    >
-      <NFormItem
-        path="otp"
-        label="Confirmation OTP"
-        feedback="Enter the OTP sent to your email"
+    <NCollapseTransition :show="order.isOTPSent">
+      <NForm
+        v-if="order.isOTPSent"
+        :model="otpModel"
+        :rules="otpModelRules"
+        ref="otpRef"
       >
-        <NInput
-          placeholder="Enter the OTP code"
-          type="text"
-          v-model:value="otpModel.otp"
-        />
-      </NFormItem>
-    </NForm>
+        <NFormItem
+          path="otp"
+          label="Confirmation OTP"
+          feedback="Enter the OTP sent to your email (OTP can be requested once every 3 minutes)"
+        >
+          <NInput
+            placeholder="Enter the OTP code"
+            type="text"
+            v-model:value="otpModel.otp"
+          />
+        </NFormItem>
+        <NButton
+          class="t-w-full t-my-5"
+          secondary
+          strong
+          type="primary"
+          @click="confirmOTP"
+        >
+          Submit OTP</NButton
+        >
+      </NForm>
+    </NCollapseTransition>
   </NModal>
 </template>
 
@@ -161,6 +169,7 @@ import {
   type SelectOption,
   NIcon,
   NTag,
+  NCollapseTransition,
 } from "naive-ui";
 import { reactive, watch, ref, type VNodeChild, h } from "vue";
 import LocationCard from "./LocationCard.vue";
@@ -182,6 +191,7 @@ interface OrderState {
   isDelivered: boolean;
   isOTPSent: boolean;
   isPaidFor: boolean;
+  paymentId: number;
 }
 
 interface OrderModel {
@@ -215,6 +225,7 @@ const order = ref<OrderState>({
   isDelivered: false,
   isOTPSent: false,
   isPaidFor: false,
+  paymentId: 0,
 });
 
 const message = useMessage();
@@ -257,8 +268,9 @@ const fetchData = async () => {
       email: response.recipient.email,
     },
     isDelivered: Boolean(response.isDelivered),
-    isOTPSent: response.isOTP,
+    isOTPSent: response.isOTPSent,
     isPaidFor: Boolean(response.payment.fulfilled),
+    paymentId: response.payment.id,
   };
 
   console.log(order.value);
@@ -302,19 +314,32 @@ const otpModelRules: FormRules = {
   },
 };
 
-const requestOTP = () => {};
+const requestOTP = async () => {
+  loading.start();
+  try {
+    message.success("OTP has been sent to your email");
+    await AxiosInstance.patch("payment/request");
+    order.value.isOTPSent = true;
+
+    loading.finish();
+  } catch (e) {
+    loading.error();
+  }
+};
 
 const confirmOTP = () => {
   loading.start();
   otpRef.value?.validate(async (errors) => {
     if (!errors) {
+      await AxiosInstance.patch("payment/fulfill/" + order.value.paymentId);
       message.success("Payment Recorded Succesfully!");
       emits("closed");
+      loading.finish();
     } else {
-      message.error("Payment failed");
+      message.error("Invalid OTP");
+      loading.error();
     }
   });
-  loading.finish();
 };
 </script>
 

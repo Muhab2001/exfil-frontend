@@ -5,7 +5,24 @@
       v-bind="orderModal"
     />
 
-    <h1 class="dark:t-text-white t-px-4 t-mb-5">My Orders</h1>
+    <div class="t-flex">
+      <span class="dark:t-text-white t-text-3xl t-px-4 t-mb-5 t-mr-3"
+        >My Orders</span
+      >
+      <NSelect
+        class="t-w-60"
+        @update:value="fetchData"
+        v-model:value="orderType"
+        :options="[
+          { label: 'Recieved Orders', value: 'recipient' },
+          {
+            label: 'Sent Orders',
+            value: 'sender',
+          },
+        ]"
+        :render-label="renderLabel"
+      />
+    </div>
     <!-- packages either delivered or sent by the customer -->
     <div class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3">
       <OrderCard
@@ -22,8 +39,8 @@
 import { AxiosInstance } from "@/axios";
 import CustomerOrderModal from "@/components/CustomerOrderModal.vue";
 import OrderCard from "@/components/OrderCard.vue";
-import type { OrderModel } from "@/typings/globals";
-import { ref, reactive, onBeforeMount } from "vue";
+import { NSelect, type SelectOption } from "naive-ui";
+import { ref, reactive, onBeforeMount, type VNodeChild, h } from "vue";
 
 interface OrderCardProps {
   id: number;
@@ -46,6 +63,23 @@ const orderModal = reactive<OrderDeliveryModalProps>({
   visible: false,
 });
 
+const renderLabel = (option: SelectOption): VNodeChild => {
+  return [
+    h(
+      "div",
+      {
+        class: "t-w-full t-mr-8",
+        style: {
+          width: "1000px important",
+        },
+      },
+      {
+        default: () => [option.label as string],
+      }
+    ),
+  ];
+};
+
 const orderType = ref<"sender" | "recipient">("recipient");
 
 const orders = ref<OrderCardProps[]>([]);
@@ -66,7 +100,7 @@ const fetchData = async () => {
       username: order.recipient.user.username,
       email: order.recipient.email,
     },
-    role: "Recipient",
+    role: orderType.value === "sender" ? "Recipient" : "Sender",
     entry_timestamp: new Date(order.payment.issue_date).toLocaleString(),
   }));
 };
