@@ -10,13 +10,13 @@ export interface User {
 
 export interface PackageTableRecord {
   id: number;
-  delivery_date?: string;
-  customer_name: string;
-  entry_timestamp: string;
   status: PackageStatus;
   category: PackageCategory;
-  address: string;
-  orderNumber: number;
+  weight: number;
+  height: number;
+  width: number;
+  length: number;
+  insurance_amount: number;
 }
 
 export interface fullPackageRecord extends PackageTableRecord {
@@ -33,7 +33,7 @@ export interface PackageLocation {
   city: string;
   country: string;
   street: string;
-  zipcode: number;
+  zipcode: string;
 }
 
 export interface OrderModel {
@@ -42,14 +42,11 @@ export interface OrderModel {
   country: string;
   zipcode: number;
   street: string;
+  delivery_email: string;
   recipient: {
-    username: string;
     email: string;
-    phone: string;
   };
   sender: {
-    username: string;
     email: string;
-    phone: string;
   };
 }

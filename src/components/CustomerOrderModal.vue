@@ -2,162 +2,320 @@
   <NModal
     :auto-focus="true"
     :on-esc-click="() => $emit('closed')"
-    :mask-closable="false"
+    :mask-closable="true"
     :block-scroll="true"
     :trap-focus="true"
     :show="props.visible"
-    :title="`Delivery Order ${props.order_id}`"
+    :title="`Delivery Order #${props.order_id}`"
     transform-origin="center"
     content-style="padding-bottom: 0px"
     preset="card"
-    class="t-w-full md:t-w-[80%] t-max-w-7xl"
+    class="t-w-full md:t-w-[80%] t-max-w-7xl t-mb-8"
     @close="() => $emit('closed')"
     size="large"
   >
-    <section>
-      <h1>Order Details</h1>
-      <div>
-        <div>Recipient</div>
-        <div>{{ order.recipient }}</div>
-      </div>
-      <div>
-        <div>Expected Delivery</div>
-        <div>{{ order.expected_date }}</div>
-      </div>
-      <div>
-        <div>Destination</div>
-        <div>{{ order.destination }}</div>
-      </div>
+    <NDivider />
+    <h1 class="t-font-semibold t-flex t-flex-wrap">Order Details</h1>
+    <section class="t-mb-4">
+      <span class="t-mt-4 t-inline-flex t-flex t-flex-col t-mr-8">
+        <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
+          Recipient
+        </div>
+        <div class="t-text-lg">{{ order.recipient.username }}</div>
+        <span class="t-mt-0 t-text-sm t-text-gray-400">{{
+          order.recipient.email
+        }}</span>
+      </span>
+      <span class="t-mt-4 t-inline-flex t-flex t-flex-col">
+        <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
+          Destination
+        </div>
+        <div class>
+          <span class="t-text-semibold t-text-lg"
+            >{{ order.destination.country }}, {{ order.destination.city }}</span
+          >, {{ order.destination.street }} - {{ order.destination.zipcode }}
+        </div>
+      </span>
     </section>
-    <section>
-      <h1>Order Packages</h1>
+    <NDivider title-placement="left">
+      <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Order Packages</h1>
+    </NDivider>
+    <section class="t-flex t-flex-wrap">
       <PackageCard
         v-for="(pkg, index) in order.packages"
         :key="index"
         v-bind="pkg"
+        :index="index"
         :editable="false"
       />
     </section>
-    <section>
-      <h1>Order Locations</h1>
-      <LocationCard
-        v-for="(location, index) in order.previous_locations"
-        :key="index"
-        v-bind="location"
-      />
-    </section>
-    <NForm ref="orderFormRef" :rules="orderRules" :model="orderModelRef">
-      <h1>Add a new location</h1>
-      <NFormItem path="payment" label="Payment">
-        <NInputNumber v-model:value="orderModelRef.payment" min="0" clearable />
-      </NFormItem>
-      <NButton class="t-w-full t-mr-2" @click="submitForm" type="success"
-        >Confirm Payment</NButton
+    <div class="t-w-full t-mt-6">
+      <NDivider title-placement="left">
+        <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Delivery Path</h1>
+      </NDivider>
+      <NSpace vertical>
+        <NSteps vertical class="t-my-6"
+          ><NStep
+            status="process"
+            v-for="(location, index) in order.location_history"
+            :key="index"
+            :title="`${location.country}, ${location.city}`"
+            :description="`${location.street}, zipcode: ${location.zipcode}`"
+          ></NStep
+        ></NSteps>
+      </NSpace>
+    </div>
+
+    <NDivider title-placement="left">
+      <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Order Payment</h1>
+    </NDivider>
+    <div class="t-py-8 t-pt-0">
+      <h2>Status</h2>
+      <NTag
+        class="t-p-6 t-mt-3"
+        round
+        strong
+        type="success"
+        size="large"
+        v-if="order.isPaidFor"
       >
+        <template #icon>
+          <NIcon :component="CheckmarkCircle12Filled" />
+        </template>
+        Fulfilled
+      </NTag>
+      <NTag class="t-p-6 t-mt-3" size="large" round type="warning" v-else
+        ><template #icon> <NIcon :component="ErrorOutlined" /> </template
+        >Pending</NTag
+      >
+    </div>
+    <NButton
+      class="t-w-full t-mb-5"
+      secondary
+      strong
+      type="primary"
+      :disabled="order.isOTPSent"
+      @click="requestOTP"
+      ><template #icon
+        ><NIcon :component="Money16Filled" class="t-mr-5"
+      /></template>
+      Pay for order</NButton
+    >
+    <p v-if="order.isOTPSent">
+      You can request another OTP after 3 minutes of OTP request
+    </p>
+    <NForm
+      v-if="order.isOTPSent"
+      :model="otpModel"
+      :rules="otpModelRules"
+      ref="otpRef"
+    >
+      <NFormItem
+        path="otp"
+        label="Confirmation OTP"
+        feedback="Enter the OTP sent to your email"
+      >
+        <NInput
+          placeholder="Enter the OTP code"
+          type="text"
+          v-model:value="otpModel.otp"
+        />
+      </NFormItem>
     </NForm>
-    <template #footer>
-      <NButton @click="$emit('closed')" type="default">Cancel</NButton>
-    </template>
   </NModal>
 </template>
 
 <script setup lang="ts">
+import { AxiosInstance } from "@/axios";
+import {
+  PackageStatus,
+  EventType,
+  PackageLocationType,
+  locationTypeMapper,
+} from "@/enums/packages";
 import type {
-  fullPackageRecord,
+  PackageTableRecord,
   User,
   PackageLocation,
-  OrderModel,
 } from "@/typings/globals";
-import { AxiosInstance } from "@/axios";
-import { NForm, NModal, type FormRules } from "naive-ui";
-import { reactive, watch, ref, onBeforeMount } from "vue";
+import { CheckmarkCircle12Filled, Money16Filled } from "@vicons/fluent";
+import { ErrorOutlined } from "@vicons/material";
+import {
+  NForm,
+  NFormItem,
+  NModal,
+  NCard,
+  NSelect,
+  NSpace,
+  NInput,
+  NInputNumber,
+  NButton,
+  NStatistic,
+  NStep,
+  NSteps,
+  useLoadingBar,
+  useMessage,
+  type FormInst,
+  type FormRules,
+  NDivider,
+  type SelectOption,
+  NIcon,
+  NTag,
+} from "naive-ui";
+import { reactive, watch, ref, type VNodeChild, h } from "vue";
 import LocationCard from "./LocationCard.vue";
 import PackageCard from "./PackageCard.vue";
-import { Role } from "@/enums/roles";
 
-interface OrderDeliveryModalProps {
+interface CustomerModalProps {
   order_id: number;
   visible: boolean;
 }
 
+console.log(Object.values(PackageLocationType));
+
 interface OrderState {
-  packages: fullPackageRecord[];
-  recipient?: User;
-  expected_date: string;
-  destination?: Omit<PackageLocation, "timestamp">;
-  previous_locations: PackageLocation[];
+  packages: PackageTableRecord[];
+  recipient: { username: string; email: string };
+  entry_timestamp: string;
+  destination: Omit<PackageLocation, "timestamp">;
+  location_history: PackageLocation[];
+  isDelivered: boolean;
+  isOTPSent: boolean;
+  isPaidFor: boolean;
 }
 
-const props = defineProps<OrderDeliveryModalProps>();
+interface OrderModel {
+  city: string;
+  country: string;
+  zipcode: number;
+  street: string;
+  transport: EventType.Truck;
+  location_type: PackageLocationType;
+  statuses: { id: number; status: PackageStatus }[];
+}
+
+const props = defineProps<CustomerModalProps>();
 const emits = defineEmits<{ (e: "closed"): void }>();
 
-const orderModelRef = ref<{ payment: number }>({
-  payment: 0,
-});
-
-const orderRules: FormRules = {
-  payment: {
-    required: true,
-    type: "number",
-    trigger: "blur",
-  },
-};
-
-const order = reactive<OrderState>({
+// TODO fetch the information on modal visibility
+const order = ref<OrderState>({
   packages: [],
-  // FIXME: expected_date isn't in the back-end
-  expected_date: new Date().toLocaleDateString(),
-  previous_locations: [],
+  entry_timestamp: new Date().toLocaleDateString(),
+  location_history: [],
+  destination: {
+    city: "",
+    country: "",
+    street: "",
+    zipcode: "",
+  },
+  recipient: {
+    username: "",
+    email: "",
+  },
+  isDelivered: false,
+  isOTPSent: false,
+  isPaidFor: false,
 });
+
+const message = useMessage();
+const loading = useLoadingBar();
 
 const fetchData = async () => {
-  const fetchedOrder = await AxiosInstance.get(`order/${props.order_id}`, {
-    params: props.order_id
-  });
-  // TODO: discuss fullPackageRecord with muhab
-  order.packages = fetchedOrder.data.packages;
-
-  const transport_events = fetchedOrder.data.transport_event;
-  order.previous_locations = transport_events.map((transport_event: any): PackageLocation => {
-    // assuming that the end location of the last transport event is the destination, we will ignore it
-    const location = transport_event.start_location;
+  const response = (await AxiosInstance.get("order/" + props.order_id)).data;
+  const statuses: { id: number; status: PackageStatus }[] = [];
+  const pkgObjs: PackageTableRecord[] = response.packages.map((pkg: any) => {
+    statuses.push({
+      id: pkg.package_number as number,
+      status: pkg.status as PackageStatus,
+    });
     return {
-      timestamp: location.timestamp,
-      city: location.address.city,
-      country: location.address.country,
-      street: location.address.street,
-      zipcode: location.address.zip_code,
+      id: pkg.package_number,
+      category: pkg.category,
+      status: pkg.status,
+      height: pkg.height,
+      width: pkg.width,
+      length: pkg.length,
+      weight: pkg.weight,
+      insurance_amount: pkg.insurance_amount,
     };
   });
 
-  order.recipient = {
-    // FIXME: fullname isn't in the back-end
-    fullname: "",
-    username: fetchedOrder.data.recipient.username,
-    email: fetchedOrder.data.recipient.email,
-    role: Role.CUSTOMER,
+  order.value = {
+    packages: pkgObjs,
+    entry_timestamp: response.packages[0].entry_timestamp,
+    location_history: response.packages[0].package_locations.map(
+      (location: any) => location.address
+    ),
+    destination: {
+      city: response.final_destination.city,
+      country: response.final_destination.country,
+      zipcode: response.final_destination.zipcode,
+      street: response.final_destination.street,
+    },
+    recipient: {
+      username: response.recipient.user.username,
+      email: response.recipient.email,
+    },
+    isDelivered: Boolean(response.isDelivered),
+    isOTPSent: response.isOTP,
+    isPaidFor: Boolean(response.payment.fulfilled),
   };
 
-  const lastLocation = transport_events[transport_events.length-1].end_location;
-  order.destination = {
-    city: lastLocation.address.city,
-    country: lastLocation.address.country,
-    street: lastLocation.address.street,
-    zipcode: lastLocation.address.zip_code,
-  };
+  console.log(order.value);
 };
 
 watch(
   () => props.visible,
-  () => {}
+  async () => {
+    await fetchData();
+  }
 );
 
-onBeforeMount(async () => {
-  await fetchData();
+const renderLabel = (option: SelectOption): VNodeChild => {
+  return [
+    h(
+      "div",
+      {
+        class: "t-w-full t-mr-8",
+        style: {
+          width: "1000px important",
+        },
+      },
+      {
+        default: () => [option.label as string],
+      }
+    ),
+  ];
+};
+
+const otpRef = ref<FormInst | null>(null);
+
+const otpModel = ref<{ otp: string }>({
+  otp: "",
 });
 
-// * I have no idea how that will work with only a number
-const submitForm = () => {};
+const otpModelRules: FormRules = {
+  otp: {
+    required: true,
+    type: "string",
+    message: "Enter a matching otp to the one sent to your email",
+  },
+};
+
+const requestOTP = () => {};
+
+const confirmOTP = () => {
+  loading.start();
+  otpRef.value?.validate(async (errors) => {
+    if (!errors) {
+      message.success("Payment Recorded Succesfully!");
+      emits("closed");
+    } else {
+      message.error("Payment failed");
+    }
+  });
+  loading.finish();
+};
 </script>
 
 <style scoped></style>

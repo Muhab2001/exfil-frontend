@@ -1,44 +1,43 @@
 <template>
-  <NCard>
+  <NCard
+    @click="$emit('edit', props.id)"
+    header-style="padding-bottom 0px;"
+    hoverable
+    class="t-w-full t-mr-5 t-mb-3 t-cursor-pointer t-break-inside-avoid"
+  >
     <template #header>
-      <h1>Order # {{ props.id }}</h1>
+      <h3 class="t-font-semibold">
+        Order <span class="t-text-green-400">#{{ props.id }}</span>
+      </h3>
     </template>
     <section>
-      <h3>Sender</h3>
-      <p>{{ props.sender.username }}</p>
+      <div class="t-text-lg t-mb-2 t-font-medium">{{ props.role }}</div>
+      <div class="t-text-sm">{{ props.customer.username }}</div>
+      <span class="t-mt-4 t-text-xs t-text-gray-400">{{
+        props.customer.email
+      }}</span>
     </section>
-    <section>
-      <h3>Recipient</h3>
-      <p>{{ props.recipient.username }}</p>
-    </section>
-
-    <template #footer> Expected at {{ props.expected_date }} </template>
+    <NDivider class="t-my-0 t-mt-3" />
+    <template #footer> Entered at {{ props.entry_timestamp }} </template>
   </NCard>
 </template>
 
 <script setup lang="ts">
 import type { PackageStatus } from "@/enums/packages";
-import { NCard } from "naive-ui";
+import { NCard, NDivider, NStatistic } from "naive-ui";
 
 interface OrderCardProps {
   id: number;
-  recipient: {
+  customer: {
     username: string;
     email: string;
-    phone: string;
   };
-  sender: {
-    username: string;
-    email: string;
-    phone: string;
-  };
-  expected_date: string;
-  delivery_date?: string;
+  role: "Sender" | "Recipient";
+  entry_timestamp: string;
 }
 
 const props = defineProps<OrderCardProps>();
 const emits = defineEmits<{
-  (e: "view", id: number): void;
   (e: "edit", id: number): void;
 }>();
 </script>

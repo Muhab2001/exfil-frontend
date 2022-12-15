@@ -10,9 +10,18 @@ export const useAuth = defineStore("auth", () => {
     username: "Testing admin",
     fullname: "admin bebob",
     // ! should default to a student
-    role: Role.ADMIN,
+    role: Role.CUSTOMER,
     email: "clownystring@gmail.com",
   });
+
+  AxiosInstance.defaults.headers.common = {
+    Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIwMTk0NTU3NTAiLCJyb2xlIjoxLCJpYXQiOjE2NzEwODc1NDIsImV4cCI6MTY3MTY5MjM0Mn0.Tyxw2tPzcc2WLBLM48mmINSxJspyW3fGKk4sgt_VO2s`,
+  };
+
+  sessionStorage.setItem(
+    "accessToken",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIwMTk0NTU3NTAiLCJyb2xlIjoxLCJpYXQiOjE2NzEwODc1NDIsImV4cCI6MTY3MTY5MjM0Mn0.Tyxw2tPzcc2WLBLM48mmINSxJspyW3fGKk4sgt_VO2s"
+  );
 
   // TODO proper fetching for the token
 

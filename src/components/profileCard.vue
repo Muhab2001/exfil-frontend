@@ -1,7 +1,7 @@
 <template>
   <NDropdown :options="profileOptions" @select="handleSelect">
     <span
-      class="t-inline-flex t-flex-row t-p-4 t-items-center t-w-fit dark:t-text-white"
+      class="t-inline-flex t-flex-row t-p-4 t-text-slate-700 t-items-center t-w-fit dark:t-text-white"
     >
       <div>
         <span class="t-mx-3 t-hidden md:t-flex t-font-bold t-text-sm">{{

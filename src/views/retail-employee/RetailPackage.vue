@@ -1,11 +1,101 @@
 <template>
   <div>
-    <!-- search input -->
-    <!-- table view for registered packages -->
-    <!-- modal to update/create packages -->
+    <OrderCreateModal
+      :visible="orderModal.visible"
+      :mode="orderModal.mode"
+      :id="orderModal.id"
+      @closed="orderModal.visible = false"
+    />
+    <h1 class="dark:t-text-white t-px-4 t-mb-5">Registered Orders</h1>
+    <div class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3">
+      <OrderCard
+        @edit="(id) => openModal(id)"
+        v-for="order in orders"
+        :key="order.id"
+        v-bind="order"
+      />
+    </div>
+    <div class="t-fixed t-bottom-8 t-flex t-w-full t-justify-center">
+      <NButton
+        :round="true"
+        type="primary"
+        @click="
+          () => {
+            openModal();
+          }
+        "
+        class=""
+      >
+        <template #icon>
+          <NIcon :component="Add12Filled" />
+        </template>
+        New Order</NButton
+      >
+    </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { AxiosInstance } from "@/axios";
+import OrderCard from "@/components/OrderCard.vue";
+import OrderCreateModal from "@/components/OrderCreateModal.vue";
+import { Add12Filled } from "@vicons/fluent";
+import { NButton, NIcon } from "naive-ui";
+import { reactive, onBeforeMount, ref } from "vue";
+
+interface OrderCardProps {
+  id: number;
+  customer: {
+    username: string;
+    email: string;
+  };
+  role: "Recipient" | "Sender";
+  entry_timestamp: string;
+}
+
+interface OrderModalProps {
+  visible: boolean;
+  mode: "edit" | "create";
+  id?: number;
+}
+
+const orderModal = reactive<OrderModalProps>({
+  visible: false,
+  mode: "create",
+});
+
+const orders = ref<OrderCardProps[]>([]);
+
+const fetchOrders = async () => {
+  const response = (await AxiosInstance.get("order/retail-employee")).data;
+
+  orders.value = response.map((order: any) => ({
+    id: order.id,
+    recipient: {
+      customer: order.recipient.user.username,
+      email: order.recipient.email,
+    },
+    role: "Recipient",
+    entry_timestamp: new Date(order.payment.issue_date).toLocaleString(),
+  }));
+
+  console.log(orders.value);
+};
+
+onBeforeMount(async () => {
+  await fetchOrders();
+});
+
+const openModal = (id?: number) => {
+  if (id !== undefined) {
+    orderModal.mode = "edit";
+    orderModal.id = id;
+  } else {
+    orderModal.mode = "create";
+  }
+
+  orderModal.visible = true;
+};
+</script>
 
 <style scoped></style>

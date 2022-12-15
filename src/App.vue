@@ -52,7 +52,7 @@ document
   );
 
 watchEffect(() => {
-  if (themeConfig.theme.value == Theme.DARK) {
+  if (themeConfig.theme.value === Theme.DARK) {
     document.querySelector("html")?.classList.add("t-dark");
   } else {
     document.querySelector("html")?.classList.remove("t-dark");
@@ -84,7 +84,7 @@ const route = useRoute();
             <NIcon
               size="40"
               class="t-mr-3"
-              color="green"
+              color="rgb(74 222 128)"
               :component="BoxMultiple24Filled"
             />
             <h2
@@ -119,7 +119,7 @@ const route = useRoute();
           </span>
         </div>
       </header>
-      <div class="t-px-3 t-py-2 md:t-px-4 md:t-py-8">
+      <div class="t-px-3 t-py-2 md:t-px-4 md:t-py-4">
         <NMessageProvider style="width: 100vw; height: 100%">
           <NLoadingBarProvider>
             <NDialogProvider>
