@@ -69,7 +69,7 @@ import type {
   OrderModel,
 } from "@/typings/globals";
 import { AxiosInstance } from "@/axios";
-import { NForm, NModal, type FormRules } from "naive-ui";
+import { NForm, NModal, useMessage, type FormRules } from "naive-ui";
 import { reactive, watch, ref, onBeforeMount } from "vue";
 import LocationCard from "./LocationCard.vue";
 import PackageCard from "./PackageCard.vue";
@@ -112,23 +112,41 @@ const order = reactive<OrderState>({
 
 const fetchData = async () => {
   const fetchedOrder = await AxiosInstance.get(`order/${props.order_id}`, {
-    params: props.order_id
+    params: {id: props.order_id}
   });
-  // TODO: discuss fullPackageRecord with muhab
-  order.packages = fetchedOrder.data.packages;
+  const fetchedPackages = fetchedOrder.data.packages.map((pkg: any): fullPackageRecord => {
+    return {
+      weight: pkg.weight,
+      length: pkg.length,
+      width: pkg.width,
+      height: pkg.height,
+      id: pkg.package_number,
+      status: pkg.status,
+      category: pkg.category,
+      entry_timestamp: pkg.entry_timestamp,
+      delivery_date: pkg.delivery_date,
+      sender: fetchedOrder.data.sender.username,
+      recipient: fetchedOrder.data.recipient.username,
+      customer_name: "",
+      address: "",
+      orderNumber: fetchedOrder.data.id,
+    }
+  });
+
+  order.packages = fetchedPackages;
 
   const transport_events = fetchedOrder.data.transport_event;
   order.previous_locations = transport_events.map((transport_event: any): PackageLocation => {
-    // assuming that the end location of the last transport event is the destination, we will ignore it
-    const location = transport_event.start_location;
-    return {
-      timestamp: location.timestamp,
-      city: location.address.city,
-      country: location.address.country,
-      street: location.address.street,
-      zipcode: location.address.zip_code,
-    };
-  });
+      // assuming that the end location of the last transport event is the current location/destination, we will ignore it
+      const location = transport_event.start_location;
+      return {
+        timestamp: location.timestamp,
+        city: location.address.city,
+        country: location.address.country,
+        street: location.address.street,
+        zipcode: location.address.zip_code,
+      };
+    });
 
   order.recipient = {
     // FIXME: fullname isn't in the back-end
@@ -138,14 +156,15 @@ const fetchData = async () => {
     role: Role.CUSTOMER,
   };
 
-  const lastLocation = transport_events[transport_events.length-1].end_location;
+  const final_destination = fetchedOrder.data.final_destination;
   order.destination = {
-    city: lastLocation.address.city,
-    country: lastLocation.address.country,
-    street: lastLocation.address.street,
-    zipcode: lastLocation.address.zip_code,
+    city: final_destination.city,
+    country: final_destination.country,
+    street: final_destination.street,
+    zipcode: final_destination.zip_code,
   };
 };
+
 
 watch(
   () => props.visible,
@@ -156,8 +175,11 @@ watch(
   }
 );
 
+const messenger = useMessage();
 // * I have no idea how that will work with only a number
-const submitForm = () => {};
+const submitForm = () => {
+  messenger.error("Unimplemented Error")
+};
 </script>
 
 <style scoped></style>
