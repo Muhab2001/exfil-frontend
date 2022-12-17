@@ -28,7 +28,7 @@
       striped
       bordered
       :pagination="tableState.pagination"
-      :row-props="(row: UserRecord) => ({style: 'cursor:pointer;'})"
+      :row-props="(row: UserRecord) => ({style: 'cursor:pointer;', onClick: (e) => editUser(e, row)})"
     />
     <div class="t-fixed t-bottom-8 t-flex t-w-full t-justify-center">
       <NButton :round="true" type="primary" @click="createUser">
@@ -121,8 +121,8 @@ const tableState = ref<{
                   secondary: true,
                   strong: true,
                   class: "t-py-2",
-                  onClick: () => {
-                    editUser(record);
+                  onClick: (e) => {
+                    editUser(e, record);
                     console.log("INSIDE EDIT MODEL", userModal);
                   },
                 },
@@ -155,8 +155,8 @@ const tableState = ref<{
                   secondary: true,
                   strong: true,
                   class: "t-py-2",
-                  onClick: () => {
-                    deleteUser(record.id);
+                  onClick: (e) => {
+                    deleteUser(e, record.id);
                   },
                 },
                 {
@@ -268,7 +268,8 @@ const createUser = () => {
   userModal.visible = true;
 };
 
-const editUser = (record: UserRecord) => {
+const editUser = (e: MouseEvent, record: UserRecord) => {
+  e.stopPropagation();
   userModal.user_id = record.id;
   userModal.visible = true;
   userModal.mode = "edit";
@@ -278,7 +279,8 @@ const editUser = (record: UserRecord) => {
 const loading = useLoadingBar();
 const message = useMessage();
 // TODO: using the deletion endpoint on the api
-const deleteUser = async (userId: string) => {
+const deleteUser = async (e: MouseEvent, userId: string) => {
+  e.stopPropagation();
   loading.start();
 
   try {

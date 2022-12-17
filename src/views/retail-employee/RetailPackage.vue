@@ -8,13 +8,27 @@
       @closed="orderModal.visible = false"
     />
     <h1 class="dark:t-text-white t-px-4 t-mb-5">Registered Orders</h1>
-    <div class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3">
+    <div
+      v-if="orders.length > 0"
+      class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3"
+    >
       <OrderCard
         @edit="(id) => openModal(id)"
         v-for="order in orders"
         :key="order.id"
         v-bind="order"
       />
+    </div>
+    <div
+      v-else
+      class="t-w-full t-h-screen t-flex t-items-center t-justify-center"
+    >
+      <NEmpty
+        size="huge"
+        description="
+         No Registered Packages under delivery!
+        "
+      ></NEmpty>
     </div>
     <div class="t-fixed t-bottom-8 t-flex t-w-full t-justify-center">
       <NButton
@@ -41,7 +55,7 @@ import OrderCard from "@/components/OrderCard.vue";
 import OrderCreateModal from "@/components/OrderCreateModal.vue";
 import { Role } from "@/enums/roles";
 import { Add12Filled } from "@vicons/fluent";
-import { NButton, NIcon } from "naive-ui";
+import { NButton, NEmpty, NIcon } from "naive-ui";
 import { reactive, onBeforeMount, ref } from "vue";
 
 interface OrderCardProps {

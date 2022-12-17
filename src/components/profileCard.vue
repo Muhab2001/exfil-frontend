@@ -19,7 +19,7 @@
 </template>
 <script setup lang="ts">
 import { NAvatar, NDropdown, type DropdownOption } from "naive-ui";
-import { reactive, watch } from "vue";
+import { reactive, watchEffect, watch } from "vue";
 import {
   PersonCircleOutline as UserIcon,
   LogOutOutline as LogoutIcon,
@@ -61,25 +61,24 @@ const profileOptions: DropdownOption[] = [
 ];
 console.log(auth.userProfile.role, Role.ADMIN);
 
-watch(
-  () => auth.userProfile.role,
-  () => {
-    if (auth.userProfile.role !== Role.ADMIN) {
-      console.log("Not for admins!");
+watchEffect(() => {
+  console.log("IN WATCH");
 
-      profileOptions.unshift({
-        label: "Update Profile",
-        key: "editPic",
-        icon: iconUtils.renderIcon(UserIcon),
-        props: {
-          onClick: () => {
-            userModal.visible = true;
-          },
+  if (auth.userProfile.role !== Role.ADMIN && profileOptions.length !== 2) {
+    console.log("Not for admins!");
+
+    profileOptions.unshift({
+      label: "Update Profile",
+      key: "editPic",
+      icon: iconUtils.renderIcon(UserIcon),
+      props: {
+        onClick: () => {
+          userModal.visible = true;
         },
-      });
-    }
+      },
+    });
   }
-);
+});
 const props = defineProps<{
   username: string;
   role: Role;

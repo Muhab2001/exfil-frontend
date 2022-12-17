@@ -26,14 +26,24 @@
           order.recipient.email
         }}</span>
       </span>
-      <span class="t-mt-4 t-inline-flex t-flex t-flex-col">
+      <span class="t-mt-4 t-inline-flex t-flex t-flex-col t-mr-8">
         <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
           Destination
         </div>
         <div class>
           <span class="t-text-semibold t-text-lg"
-            >{{ order.destination.country }}, {{ order.destination.city }}</span
-          >, {{ order.destination.street }} - {{ order.destination.zipcode }}
+            >{{ order.destination.country }}, {{ order.destination.city }},
+            {{ order.destination.street }} -
+            {{ order.destination.zipcode }}</span
+          >
+        </div>
+      </span>
+      <span class="t-mt-4 t-inline-flex t-flex t-flex-col">
+        <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
+          Expected Delivery Date
+        </div>
+        <div class="t-text-semibold t-text-lg">
+          {{ order.expected_delivery_date }}
         </div>
       </span>
     </section>
@@ -210,6 +220,7 @@ interface OrderState {
   entry_timestamp: string;
   destination: Omit<PackageLocation, "timestamp">;
   location_history: PackageLocation[];
+  expected_delivery_date: string;
 }
 
 interface OrderModel {
@@ -285,6 +296,7 @@ const order = ref<OrderState>({
     username: "",
     email: "",
   },
+  expected_delivery_date: "",
 });
 
 const message = useMessage();
@@ -323,9 +335,12 @@ const fetchData = async () => {
       street: response.final_destination.street,
     },
     recipient: {
-      username: response.recipient.user.username,
-      email: response.recipient.email,
+      username: response.recipient ? response.recipient.user.username : "-",
+      email: response.recipient ? response.recipient.email : "",
     },
+    expected_delivery_date: new Date(
+      response.packages[0].expected_delivery_date
+    ).toLocaleString(),
   };
 
   console.log(order.value);
@@ -378,8 +393,8 @@ const submitForm = () => {
   loading.start();
   orderFormRef.value?.validate(async (errors) => {
     if (!errors) {
+      await sendOrder();
       message.success("Location recorded Succesfully!");
-      emits("closed");
     } else {
       message.error("Location update failed");
     }
@@ -402,6 +417,7 @@ const sendOrder = async () => {
     zipcode: orderModelRef.value.zipcode.toString(),
     statuses: statuses,
   });
+  emits("closed");
 };
 </script>
 

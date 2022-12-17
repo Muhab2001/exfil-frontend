@@ -10,8 +10,8 @@
     :pagination="tableState.pagination"
     :row-props="(row: OrderRecord) => ({style: 'cursor:pointer;', onClick: () => {$emit('select', row.id)}})"
     @update:sorter="handleSortChange"
-    @update:filters="handleFiltersChange"
     @update:page="handlePageChange"
+    @update:filters="handleFiltersChange"
   />
 </template>
 
@@ -55,19 +55,16 @@ import { useIcon } from "@/composables/useIcon";
 import { useSortUtils } from "@/composables/sortingMapper";
 import { CheckmarkCircle } from "@vicons/ionicons5";
 import { AxiosInstance } from "@/axios";
+import { Role } from "@/enums/roles";
 
 interface OrderRecord {
   id: number;
-  delivery_date?: string;
-  customer_name: string;
+  isDelivered: boolean;
+  retailer: string;
   entry_timestamp: string;
-  status: PackageStatus;
-  category: PackageCategory;
-  address: string;
-  orderNumber: number;
 }
 
-interface PackagesTableProps {
+interface OrdersTableProps {
   username?: string;
   // external filters
   range: [number, number];
@@ -78,7 +75,7 @@ interface PackageTableMetaData {
   pagination: PaginationProps;
 }
 
-const props = defineProps<PackagesTableProps>();
+const props = defineProps<OrdersTableProps>();
 
 const emits = defineEmits<{
   (e: "select", id: number): void;
@@ -88,14 +85,14 @@ const emits = defineEmits<{
 const iconUtils = useIcon();
 
 const customerColumn: TableBaseColumn<OrderRecord> = {
-  title: "Sender",
-  key: "customer_name",
-  width: 200,
+  title: "Retail employee",
+  key: "retailer",
+  width: 100,
   resizable: true,
   defaultSortOrder: false,
   sorter: {
     compare: (a: OrderRecord, b: OrderRecord) =>
-      a.customer_name.localeCompare(b.customer_name),
+      a.retailer.localeCompare(b.retailer),
     multiple: 3,
   },
 };
@@ -103,54 +100,13 @@ const customerColumn: TableBaseColumn<OrderRecord> = {
 const entryDateColumn: TableBaseColumn<OrderRecord> = {
   title: "Entry Date",
   key: "entry_timestamp",
+  width: 100,
   defaultSortOrder: false,
   sorter: {
     compare: (a: OrderRecord, b: OrderRecord) =>
       new Date(a.entry_timestamp).getTime() -
       new Date(b.entry_timestamp).getTime(),
     multiple: 1,
-  },
-};
-
-const statusColumn: TableBaseColumn<OrderRecord> = {
-  title: "Status",
-  key: "status",
-  width: 200,
-  filter: true,
-  filterOptionValues: [],
-  filterOptions: Object.values(PackageStatus).map((status: string) => ({
-    label: status,
-    value: status,
-  })),
-  render(record: OrderRecord) {
-    return renderStatus(record.status);
-  },
-};
-
-const categoryColumn: TableBaseColumn<OrderRecord> = {
-  title: "Category",
-  key: "category",
-  width: 200,
-  filter: true,
-  filterOptionValues: [],
-  filterOptions: Object.values(PackageCategory).map((category: string) => ({
-    label: category,
-    value: category,
-  })),
-  render(record: OrderRecord) {
-    return renderCategory(record.category);
-  },
-};
-
-const deliveryDateColumn: TableBaseColumn<OrderRecord> = {
-  title: "Delivery Date",
-  key: "delivery_date",
-  defaultSortOrder: false,
-  sorter: {
-    compare: (a: OrderRecord, b: OrderRecord) =>
-      new Date(a.delivery_date ?? 0).getTime() -
-      new Date(b.delivery_date ?? 0).getTime(),
-    multiple: 2,
   },
   render(record: OrderRecord) {
     return h(
@@ -160,19 +116,27 @@ const deliveryDateColumn: TableBaseColumn<OrderRecord> = {
       },
       {
         default: () =>
-          record.delivery_date === undefined ? "-" : record.delivery_date,
+          record.entry_timestamp === undefined ? "-" : record.entry_timestamp,
       }
     );
   },
 };
 
-const cityColumn: TableBaseColumn<OrderRecord> = {
-  title: "City",
-  key: "city",
-  defaultSortOrder: false,
+const isDeliveredColumn: TableBaseColumn<OrderRecord> = {
+  title: "Status",
+  key: "isDelivered",
+  width: 50,
   filter: true,
-  filterOptionValues: [],
+  filterOptionValues: [0, 1],
+  filterOptions: [
+    { label: "Delivered", value: 1 },
+    { label: "Not Delivered", value: 0 },
+  ],
+  render(record: OrderRecord) {
+    return renderStatus(record.isDelivered);
+  },
 };
+
 const loadingRef = ref(false);
 // local state of table meta data
 const tableState = reactive<PackageTableMetaData>({
@@ -180,17 +144,17 @@ const tableState = reactive<PackageTableMetaData>({
     {
       title: "#",
       key: "id",
+      width: 100,
+      resizable: true,
     },
     customerColumn,
     entryDateColumn,
-    statusColumn,
-    categoryColumn,
-    cityColumn,
-    deliveryDateColumn,
+    isDeliveredColumn,
+
     {
       title: "Actions",
       key: "actions",
-      width: "200",
+      width: "50",
       render(record: OrderRecord) {
         return h(
           NSpace,
@@ -206,7 +170,10 @@ const tableState = reactive<PackageTableMetaData>({
                   secondary: true,
                   strong: true,
                   class: "t-py-2",
-                  onClick: () => emits("select", record.id),
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    emits("select", record.id);
+                  },
                 },
                 {
                   default: () => [
@@ -237,7 +204,7 @@ const tableState = reactive<PackageTableMetaData>({
                   secondary: true,
                   strong: true,
                   class: "t-py-2",
-                  onClick: () => deletePackage(record.id),
+                  onClick: (e) => deleteOrder(e, record.id),
                 },
                 {
                   default: () => [
@@ -273,62 +240,40 @@ const tableState = reactive<PackageTableMetaData>({
   },
 });
 
-const reactiveEntryDate = reactive(entryDateColumn);
-
-const reactiveCustomer = reactive(customerColumn);
-const reactiveStatus = reactive(statusColumn);
-const reactiveCategory = reactive(categoryColumn);
-const reactiveDeliveryDate = reactive(deliveryDateColumn);
-const reactiveCity = reactive(cityColumn);
+const reactiveStatus = reactive(isDeliveredColumn);
 
 const tableData = ref<OrderRecord[]>([]);
 const sortUtils = useSortUtils();
 
-const orderModalState = () => {};
-
 onBeforeMount(async () => {
-  // TODO: replace with the correct api call for the backend for both unique cities
-  reactiveCity.filterOptions = (
-    await AxiosInstance.get("package/cities")
-  ).data.map((record: any) => ({ label: record.city, value: record.city }));
-  reactiveCity.filterOptionValues = reactiveCity.filterOptions?.map(
-    (e) => e.value
-  );
-  reactiveCategory.filterOptionValues = Object.values(PackageCategory);
-  reactiveStatus.filterOptionValues = Object.values(PackageStatus);
   await query();
 });
 // ------------- Table Mutation functions --------------------
 
-const deletePackage = async (packageId: number) => {
+const deleteOrder = async (e: MouseEvent, orderId: number) => {
+  e.stopPropagation();
   loadingRef.value = true;
-  await AxiosInstance.delete("package/" + packageId);
-  tableData.value = tableData.value.filter((record) => record.id !== packageId);
+  await AxiosInstance.delete("order/" + orderId);
+  tableData.value = tableData.value.filter((record) => record.id !== orderId);
   loadingRef.value = false;
 };
 
-const openPackageModal = (packageId: number) => {};
 // fetching data according to current params
 const query = async (sorter?: DataTableSortState[]) => {
   loadingRef.value = true;
   // fetch from axiosInstance supplying all needed filters/sorting query params
   try {
     const response = (
-      await AxiosInstance.get("package/", {
+      await AxiosInstance.get("order/", {
         params: {
           from: new Date(props.range[0]).toISOString(),
           to: new Date(props.range[1]).toISOString(),
-          customer:
+          isDelivered: reactiveStatus.filterOptionValues!.join(","),
+          retailer:
             props.username && props.username.trim().length
               ? props.username
               : undefined,
-          categories: reactiveCategory.filterOptionValues?.join(","),
-          statuses: reactiveStatus.filterOptionValues!.join(","),
-          cities: reactiveCity.filterOptionValues!.join(","),
-          deliveryDateSort:
-            sorter && sorter[2].order
-              ? sortUtils.mapSort(sorter[2].order)
-              : undefined,
+
           customerSort:
             sorter && sorter[0].order
               ? sortUtils.mapSort(sorter[0].order)
@@ -343,25 +288,22 @@ const query = async (sorter?: DataTableSortState[]) => {
         },
       })
     ).data;
-    tableData.value = response.results.map((record: any) => ({
-      id: record.package_package_number,
-      customer_name: record.user_username,
-      entry_timestamp: new Date(
-        record.package_entry_timestamp
-      ).toLocaleString(),
-      status: record.package_status,
-      category: record.package_category,
-      delivery_date: record.package_delivery_date
-        ? new Date(record.package_delivery_date).toLocaleString()
-        : "-",
-      city: record.geo_address_city,
-    }));
+    try {
+      tableData.value = response.map((record: any) => ({
+        id: record.order_id,
+        retailer: record.retail_user_username,
+        entry_timestamp: new Date(
+          record.package_entry_timestamp
+        ).toLocaleString(),
+        isDelivered: record.order_isDelivered,
+      }));
+    } catch (e) {
+      console.log(e);
+    }
 
-    console.log(response.results);
+    console.log("STATE", tableData.value);
 
     tableState.pagination.itemCount = response.count;
-
-    console.log("PAGINATION", tableState.pagination);
 
     // TODO: needs mapping from api response
     loadingRef.value = false;
@@ -377,11 +319,20 @@ const handlePageChange = async (currentPage: number) => {
 };
 
 // handling filter change
+
+// handling sorting change
+const handleSortChange = (sorter: DataTableSortState[]) => {
+  // switch sorting state and fire the query function
+  console.log(sorter);
+
+  query(sorter);
+};
+
 const handleFiltersChange = async (
   filters: DataTableFilterState,
   initiatorColumn: DataTableBaseColumn
 ) => {
-  const filterStatuses = filters.status;
+  const filterStatuses = filters.isDelivered;
   if (Array.isArray(filterStatuses)) {
     reactiveStatus.filterOptionValues = filterStatuses;
   } else if (filters.status) {
@@ -390,34 +341,8 @@ const handleFiltersChange = async (
     reactiveStatus.filterOptionValues = undefined;
   }
 
-  const filterCategories = filters.category;
-  if (Array.isArray(filterCategories)) {
-    reactiveCategory.filterOptionValues = filterCategories;
-  } else if (filters.status) {
-    reactiveCategory.filterOptionValues = [filterCategories as string];
-  } else {
-    reactiveCategory.filterOptionValues = undefined;
-  }
-
-  const filterCities = filters.city;
-  if (Array.isArray(filterCities)) {
-    reactiveCity.filterOptionValues = filterCities;
-  } else if (filters.status) {
-    reactiveCity.filterOptionValues = [filterCities as string];
-  } else {
-    reactiveCity.filterOptionValues = undefined;
-  }
-
-  emits("updateOrder", reactiveCity.filterOptionValues as string[]);
-
   await query();
   // switch filter state, and fire the query function
-};
-// handling sorting change
-const handleSortChange = (sorter: DataTableSortState[]) => {
-  // switch sorting state and fire the query function
-
-  query(sorter);
 };
 
 watch(
@@ -430,84 +355,24 @@ watch(
 );
 
 // ------------------ Utility functions -----------------------
-const renderCategory = (category: PackageCategory) => {
-  let categoryObj: { text: string; type: string; icon: Component | null } = {
-    text: category,
-    type: "",
-    icon: null,
-  };
-  switch (category) {
-    case PackageCategory.REGULAR:
-      categoryObj.type = "default";
-      categoryObj.icon = Box16Filled;
-      break;
-    case PackageCategory.FRAGILE:
-      categoryObj.type = "info";
-      categoryObj.icon = Fragile;
-      break;
-    case PackageCategory.LIQUID:
-      categoryObj.type = "warning";
-      categoryObj.icon = LocalDrinkRound;
-      break;
-    case PackageCategory.CHEMICAL:
-      categoryObj.type = "error";
-      categoryObj.icon = Biohazard;
-      break;
-  }
 
-  return h(
-    NTag as any,
-    {
-      type: categoryObj.type,
-      bordered: false,
-      round: true,
-    },
-    {
-      default: () => [
-        h(
-          NSpace,
-          { align: "center" },
-          {
-            default: () => [
-              h(
-                iconUtils.renderIcon(categoryObj.icon!, {
-                  size: "22",
-                  class: "t-inline-flex t-items-center t-h-20 t-mr-0",
-                })
-              ),
-              categoryObj.text,
-            ],
-          }
-        ),
-      ],
-    }
-  );
-};
-
-const renderStatus = (status: PackageStatus) => {
+const renderStatus = (delivered: boolean) => {
   let statusObj: { text: string; type: string; icon: Component | null } = {
-    text: status,
+    text: "",
     type: "",
     icon: null,
   };
-  switch (status) {
-    case PackageStatus.DELIVERED:
-      statusObj.type = "success";
-      statusObj.icon = CheckmarkCircle;
-      break;
-    case PackageStatus.TRANSIT:
-      statusObj.type = "info";
-      statusObj.icon = DirectionsTransitFilledFilled;
-      break;
-    case PackageStatus.DAMAGED:
-      statusObj.type = "warning";
-      statusObj.icon = Warning24Filled;
-      break;
-    case PackageStatus.LOST:
-      statusObj.type = "error";
-      statusObj.icon = ErrorCircle24Filled;
-      break;
+
+  if (delivered) {
+    statusObj.text = "Delivered";
+    statusObj.type = "success";
+    statusObj.icon = CheckmarkCircle;
+  } else {
+    statusObj.text = "Not Delivered";
+    statusObj.type = "default";
+    statusObj.icon = ErrorCircle24Filled;
   }
+
   return h(
     NTag as any,
     {

@@ -15,12 +15,7 @@
           }
         "
       />
-      <OrderCreateModal
-        :visible="orderModal"
-        mode="create"
-        :role="Role.ADMIN"
-        @closed="orderModal = false"
-      />
+
       <!-- 2 date pickers with v-model -->
       <div class="t-w-full t-flex t-justify-center">
         <NInputGroup class="t-max-w-[960px] t-mb-5"
@@ -35,6 +30,7 @@
       </div>
       <div class="t-w-full t-flex t-justify-center">
         <NInputGroup class="t-max-w-[960px] t-mb-5 t-justify-center">
+          <NInputGroupLabel>Entry Timestamp</NInputGroupLabel>
           <NDatePicker
             v-model:value="filters.range"
             type="daterange"
@@ -49,14 +45,6 @@
         ref="tableRef"
         :range="filters.range"
       />
-      <div class="t-fixed t-bottom-8 t-flex t-w-full t-justify-center">
-        <NButton :round="true" type="primary" @click="orderModal = true">
-          <template #icon>
-            <NIcon :component="Add12Filled" />
-          </template>
-          New Order</NButton
-        >
-      </div>
     </NTabPane>
     <NTabPane
       class="t-text-slate-700 dark:t-text-white t-flex t-flex-wrap"
@@ -64,6 +52,13 @@
       tab="Users"
       ><UserTableView
     /></NTabPane>
+    <NTabPane
+      class="t-text-slate-700 dark:t-text-white t-flex t-flex-wrap"
+      name="Orders"
+      tab="Orders"
+    >
+      <AdminOrdersView />
+    </NTabPane>
   </NTabs>
 </template>
 
@@ -88,6 +83,7 @@ import {
   NTabs,
 } from "naive-ui";
 import { reactive, ref, watch } from "vue";
+import AdminOrdersView from "./AdminOrdersView.vue";
 import UserTableView from "./UserTableView.vue";
 
 interface PackageModalState {
@@ -120,8 +116,6 @@ const packageModal = reactive<PackageModalState>({
   visible: false,
   packageId: 0,
 });
-
-const orderModal = ref<boolean>(false);
 
 const handleCityFilter = (cities?: string[]) => {
   console.log(cities);

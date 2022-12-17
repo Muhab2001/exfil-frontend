@@ -1,5 +1,5 @@
 <template>
-  <NCard class="t-w-full md:t-w-fit t-mr-3">
+  <NCard class="t-w-full md:t-w-fit t-mr-3 t-mb-3 t-flex-1">
     <template #header>
       <h1 class="t-flex t-items-center">
         <span class="t-flex t-items-center t-mr-3"

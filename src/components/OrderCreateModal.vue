@@ -29,10 +29,14 @@
       class="t-mb-8"
     >
       <NSpace align="center">
-        <h2 class="t-mb-5">
-          Package
-          <span class="t-text-green-400 t-font-semibold">#{{ index + 1 }}</span>
-        </h2>
+        <h1 class="t-flex t-items-center t-mb-3">
+          <span class="t-flex t-items-center t-mr-3"
+            ><NIcon size="30" color="gray" :component="Box20Filled" /></span
+          >Package
+          <span class="t-text-green-400 t-ml-3 t-font-semibold">
+            #{{ index + 1 }}</span
+          >
+        </h1>
         <template v-if="index !== 0 && props.mode === 'create'">
           <NButton
             @click="() => deletePackage(index)"
@@ -65,10 +69,15 @@
           :render-label="renderLabel"
           v-model:value="pkgmodelRefs[index].status"
           :options="
-            Object.values(PackageStatus).map((st) => ({
-              label: st,
-              value: st,
-            }))
+            Object.values(PackageStatus)
+              .filter(
+                (pkg) =>
+                  pkg !== PackageStatus.LOST && pkg !== PackageStatus.DELIVERED
+              )
+              .map((st) => ({
+                label: st,
+                value: st,
+              }))
           "
         />
       </NFormItem>
@@ -165,6 +174,17 @@
       <NFormItem path="zipcode" label="Zipcode">
         <NInputNumber v-model:value="orderModelRef.zipcode" clearable />
       </NFormItem>
+
+      <NFormItem
+        v-if="props.mode === 'create'"
+        path="expected_delivery_date"
+        label="Expected Delivery Date"
+      >
+        <NDatePicker
+          v-model:value="orderModelRef.expected_delivery_date"
+          clearable
+        />
+      </NFormItem>
       <NDivider />
       <h2 class="t-mb-4">Sender</h2>
 
@@ -245,7 +265,7 @@ import { AxiosInstance } from "@/axios";
 import { PackageCategory, PackageStatus } from "@/enums/packages";
 import { Role } from "@/enums/roles";
 import type { OrderModel } from "@/typings/globals";
-import { Add12Filled, Delete24Filled } from "@vicons/fluent";
+import { Add12Filled, Box20Filled, Delete24Filled } from "@vicons/fluent";
 import {
   NForm,
   NFormItem,
@@ -262,6 +282,7 @@ import {
   NIcon,
   type SelectOption,
   type FormItemRule,
+  NDatePicker,
 } from "naive-ui";
 import {
   ref,
@@ -350,6 +371,7 @@ const orderModelRef = ref<OrderModel>({
   recipient: "",
   sender: "",
   delivery_employee: "",
+  expected_delivery_date: new Date().getTime(),
 });
 
 const orderFormRef = ref<FormInst | null>(null);
@@ -455,6 +477,11 @@ const orderRules: FormRules = {
     type: "string",
     trigger: "blur",
   },
+  expected_delivery_date: {
+    required: props.mode === "create",
+    type: "integer",
+    trigger: "blur",
+  },
 };
 
 watch(
@@ -485,6 +512,8 @@ watch(
           recipient: "",
           sender: "",
           delivery_employee: "",
+          retail_employee_id: "",
+          expected_delivery_date: new Date().getTime(),
         };
         // empty all fields
       } else {
@@ -500,6 +529,8 @@ watch(
           recipient: response.recipient ? response.recipient.userId : "",
           sender: response.sender ? response.sender.userId : "",
           delivery_employee: response.deliveryEmployee.userId,
+          retail_employee_id: response.retail_employee.userId,
+          expected_delivery_date: new Date().getTime(),
         };
 
         pkgmodelRefs.value = response.packages.map((pkg: any) => ({
@@ -575,7 +606,12 @@ const submitForm = async () => {
     try {
       if (props.mode === "create") {
         const reqBody: any = {
-          packages: pkgmodelRefs.value,
+          packages: pkgmodelRefs.value.map((pkg) => ({
+            ...pkg,
+            expected_delivery_date: new Date(
+              orderModelRef.value.expected_delivery_date
+            ).toISOString(),
+          })),
           payment: orderModelRef.value.payment,
           city: orderModelRef.value.city,
           country: orderModelRef.value.country,
@@ -589,8 +625,10 @@ const submitForm = async () => {
         if (props.role === Role.ADMIN) {
           reqBody["retail_employee_id"] =
             orderModelRef.value.retail_employee_id;
+          await AxiosInstance.post("order/admin", reqBody);
+        } else {
+          await AxiosInstance.post("order", reqBody);
         }
-        await AxiosInstance.post("order", reqBody);
         message.success("Order Created Successfully!");
       } else if (props.mode === "edit") {
         await AxiosInstance.put("order/" + props.id, {

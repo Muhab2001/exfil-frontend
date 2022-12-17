@@ -66,6 +66,40 @@ export const useAuth = defineStore("auth", () => {
     userProfile.id = response.id;
   }
 
+  async function register(
+    username: string,
+    password: string,
+    phone_number: string,
+    email: string,
+    id: string
+  ) {
+    const response: {
+      name: string;
+      access_token: string;
+      username: string;
+      role: number;
+      id: string;
+    } = (
+      await AxiosInstance.post("/user/register", {
+        username: username,
+        password: password,
+        email: email,
+        phone_number: phone_number,
+        id: id,
+      })
+    ).data;
+
+    AxiosInstance.defaults.headers.common = {
+      Authorization: `Bearer ${response.access_token}`,
+    };
+    sessionStorage.setItem("accessToken", response.access_token);
+    // store the token in localStorage
+    // populate the state
+    userProfile.username = username;
+    userProfile.role = ValuetoRoleMap[response.role];
+    userProfile.id = response.id;
+  }
+
   function logout(): void {
     userProfile.username = "";
 
@@ -79,5 +113,5 @@ export const useAuth = defineStore("auth", () => {
     sessionStorage.removeItem("accessToken");
   }
 
-  return readonly({ userProfile, login, logout, refresh });
+  return readonly({ userProfile, login, logout, refresh, register });
 });

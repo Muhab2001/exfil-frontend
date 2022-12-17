@@ -46,4 +46,5 @@ export interface OrderModel {
   recipient: string;
   sender: string;
   retail_employee_id?: string;
+  expected_delivery_date: number;
 }

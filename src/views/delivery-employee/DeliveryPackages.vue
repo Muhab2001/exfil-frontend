@@ -5,13 +5,27 @@
       @closed="orderModal.visible = false"
     />
     <h1 class="dark:t-text-white t-px-4 t-mb-5">Assigned Orders</h1>
-    <div class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3">
+    <div
+      v-if="orders.length > 0"
+      class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3"
+    >
       <OrderCard
         @edit="(id) => openModal(id)"
         v-for="order in orders"
         :key="order.id"
         v-bind="order"
       />
+    </div>
+    <div
+      v-else
+      class="t-w-full t-h-screen t-flex t-items-center t-justify-center"
+    >
+      <NEmpty
+        size="huge"
+        description="
+         No Assigned Packages!
+        "
+      ></NEmpty>
     </div>
   </div>
 </template>
@@ -20,6 +34,7 @@
 import { AxiosInstance } from "@/axios";
 import OrderCard from "@/components/OrderCard.vue";
 import OrderDeliveryModal from "@/components/OrderDeliveryModal.vue";
+import { NEmpty } from "naive-ui";
 import { ref, reactive, onBeforeMount } from "vue";
 
 interface OrderCardProps {

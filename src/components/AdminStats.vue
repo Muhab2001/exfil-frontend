@@ -1,118 +1,142 @@
 <template>
-  <NCard
-    content-style="display: flex"
-    class="t-flex t-mt-3 t-mr-3 t-w-fit t-mb-6"
-  >
-    <template #header
-      ><div>
-        <div class="t-font-semibold t-text-green-400">Payments & Packages</div>
-        <p>Total statistics for packages and payments</p>
-      </div></template
+  <div class="t-columns-1 md:t-columns-auto md:t-flex md:t-flex-wrap t-w-full">
+    <NCard
+      content-style="display: flex"
+      class="t-flex t-mt-3 t-mr-3 t-w-full md:t-w-fit t-mb-6 t-break-inside-avoid"
     >
-    <NStatistic
-      class="t-mr-10"
-      label="Total Packages"
-      :value="stats.total_packages"
+      <template #header
+        ><div>
+          <div class="t-font-semibold t-text-green-400">
+            Payments & Packages
+          </div>
+          <p>Total statistics for packages and payments</p>
+        </div></template
+      >
+      <NStatistic
+        class="t-mr-10"
+        label="Total Packages"
+        :value="stats.total_packages"
+      >
+        <template #suffix>
+          <NIcon color="rgb(74 222 128)" :component="Box16Filled" /></template
+      ></NStatistic>
+      <NStatistic label="Confirmed Payments" :value="stats.confirmed_payments">
+        <template #value>
+          <span class="t-mr-2">{{ stats.total_packages }}%</span>
+        </template>
+        <template #suffix>
+          <span class="t-inline-flex t-items-center">
+            <span class="t-text-green-400 t-mr-1"
+              >({{
+                stats.confirmed_payments && stats.total_packages
+                  ? Math.trunc(stats.confirmed_payments / stats.total_packages)
+                  : 0
+              }}%)</span
+            >
+            <NIcon color="rgb(74 222 128)" :component="Money16Filled" />
+          </span>
+        </template>
+      </NStatistic>
+    </NCard>
+    <NCard
+      content-style="display: flex"
+      class="t-flex t-mt-3 t-mb-6 t-mr-2 t-w-full md:t-w-fit t-break-inside-avoid"
     >
-      <template #suffix>
-        <NIcon color="rgb(74 222 128)" :component="Box16Filled" /></template
-    ></NStatistic>
-    <NStatistic label="Confirmed Payments" :value="stats.confirmed_payments">
-      <template #suffix>
-        <NIcon color="rgb(74 222 128)" :component="Money16Filled" /></template
-    ></NStatistic>
-  </NCard>
-
-  <NCard
-    content-style="display: flex"
-    class="t-flex t-mt-3 t-mb-6 t-mr-2 t-w-fit"
-  >
-    <template #header>
-      <div>
-        <div class="t-font-semibold t-text-green-400">Packages by Category</div>
-        <p>Packages stats classified by category</p>
-      </div>
-    </template>
-    <NStatistic
-      class="t-mr-10"
-      label="Regular Packages"
-      :value="stats.categories.Regular"
+      <template #header>
+        <div>
+          <div class="t-font-semibold t-text-green-400">
+            Packages by Category
+          </div>
+          <p>Packages stats classified by category</p>
+        </div>
+      </template>
+      <NStatistic
+        class="t-mr-10"
+        label="Regular Packages"
+        :value="stats.categories.Regular"
+      >
+        <template #suffix>
+          <NIcon color="grey" :component="Box16Filled" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Fragile Packages"
+        :value="stats.categories.Fragile"
+      >
+        <template #suffix>
+          <NIcon color="rgb(96 165 250)" :component="Fragile" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Liquid Packages"
+        :value="stats.categories.Liquid"
+      >
+        <template #suffix>
+          <NIcon
+            color="rgb(250 204 21)"
+            :component="LocalDrinkRound" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Chemical Packages"
+        :value="stats.categories.Chemical"
+      >
+        <template #suffix>
+          <NIcon color="rgb(248 113 113)" :component="Biohazard" /></template
+      ></NStatistic>
+    </NCard>
+    <NCard
+      content-style="display: flex; flex-wrap: wrap"
+      class="t-flex t-mt-3 t-w-full md:t-w-fit t-mb-6 t-break-inside-avoid"
     >
-      <template #suffix>
-        <NIcon color="grey" :component="Box16Filled" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Fragile Packages"
-      :value="stats.categories.Fragile"
-    >
-      <template #suffix>
-        <NIcon color="rgb(96 165 250)" :component="Fragile" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Liquid Packages"
-      :value="stats.categories.Liquid"
-    >
-      <template #suffix>
-        <NIcon color="rgb(250 204 21)" :component="LocalDrinkRound" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Chemical Packages"
-      :value="stats.categories.Chemical"
-    >
-      <template #suffix>
-        <NIcon color="rgb(248 113 113)" :component="Biohazard" /></template
-    ></NStatistic>
-  </NCard>
-  <NCard
-    content-style="display: flex; flex-wrap: wrap"
-    class="t-flex t-mt-3 t-w-fit t-mb-6"
-  >
-    <template #header>
-      <div>
-        <div class="t-font-semibold t-text-green-400">Packages by Status</div>
-        <p>Packages stats classified by category</p>
-      </div>
-    </template>
-    <NStatistic
-      class="t-mr-10"
-      label="Delivered Packages"
-      :value="stats.statuses.Delivered"
-    >
-      <template #suffix>
-        <NIcon
-          color="rgb(96 165 250)"
-          :component="DirectionsTransitFilledFilled" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Transit Packages"
-      :value="stats.statuses.Transit"
-    >
-      <template #suffix>
-        <NIcon color="rgb(248 113 113)" :component="Biohazard" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Damaged Packages"
-      :value="stats.statuses.Damaged"
-    >
-      <template #suffix>
-        <NIcon color="rgb(250 204 21)" :component="Warning24Filled" /></template
-    ></NStatistic>
-    <NStatistic
-      class="t-mr-10"
-      label="Lost Packages"
-      :value="stats.statuses.Lost"
-    >
-      <template #suffix>
-        <NIcon
-          color="rgb(248 113 113)"
-          :component="ErrorCircle24Filled" /></template
-    ></NStatistic>
-  </NCard>
+      <template #header>
+        <div>
+          <div class="t-font-semibold t-text-green-400">Packages by Status</div>
+          <p>Packages stats classified by category</p>
+        </div>
+      </template>
+      <NStatistic
+        class="t-mr-10"
+        label="Delivered Packages"
+        :value="stats.statuses.Delivered"
+      >
+        <template #suffix>
+          <NIcon
+            color="rgb(74 222 128)"
+            :component="CheckmarkCircle" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Transit Packages"
+        :value="stats.statuses.Transit"
+      >
+        <template #suffix>
+          <NIcon
+            color="rgb(96 165 250)"
+            :component="DirectionsTransitFilledFilled" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Damaged Packages"
+        :value="stats.statuses.Damaged"
+      >
+        <template #suffix>
+          <NIcon
+            color="rgb(250 204 21)"
+            :component="Warning24Filled" /></template
+      ></NStatistic>
+      <NStatistic
+        class="t-mr-10"
+        label="Lost Packages"
+        :value="stats.statuses.Lost"
+      >
+        <template #suffix>
+          <NIcon
+            color="rgb(248 113 113)"
+            :component="ErrorCircle24Filled" /></template
+      ></NStatistic>
+    </NCard>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -126,6 +150,7 @@ import {
   Money16Filled,
   Warning24Filled,
 } from "@vicons/fluent";
+import { CheckmarkCircle } from "@vicons/ionicons5";
 import {
   DirectionsTransitFilledFilled,
   LocalDrinkRound,

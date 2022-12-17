@@ -24,13 +24,30 @@
       />
     </div>
     <!-- packages either delivered or sent by the customer -->
-    <div class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3">
-      <OrderCard
-        @edit="(id: number) => {openModal(id)}"
-        v-for="(order, index) in orders"
-        :key="index"
-        v-bind="order"
-      />
+    <template v-if="orders.length > 0">
+      <div
+        class="t-w-full t-columns-1 t-column-1 md:t-columns-2 lg:t-columns-3"
+      >
+        <OrderCard
+          @edit="(id: number) => {openModal(id)}"
+          v-for="(order, index) in orders"
+          :key="index"
+          v-bind="order"
+        />
+      </div>
+    </template>
+    <div
+      v-else
+      class="t-w-full t-h-screen t-flex t-items-center t-justify-center"
+    >
+      <NEmpty
+        size="huge"
+        :description="
+          orderType === 'recipient'
+            ? 'No orders coming your way'
+            : 'No orders are sent by you'
+        "
+      ></NEmpty>
     </div>
   </div>
 </template>
@@ -39,7 +56,7 @@
 import { AxiosInstance } from "@/axios";
 import CustomerOrderModal from "@/components/CustomerOrderModal.vue";
 import OrderCard from "@/components/OrderCard.vue";
-import { NSelect, type SelectOption } from "naive-ui";
+import { NEmpty, NSelect, type SelectOption } from "naive-ui";
 import { ref, reactive, onBeforeMount, type VNodeChild, h } from "vue";
 
 interface OrderCardProps {

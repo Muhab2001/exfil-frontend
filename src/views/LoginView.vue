@@ -13,8 +13,9 @@ import {
   type FormInst,
   type FormRules,
   NIcon,
+  NCollapseTransition,
 } from "naive-ui";
-import { ref } from "vue";
+import { computed, ref, type ComputedRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
 // UI framwork logic
@@ -29,31 +30,87 @@ const auth = useAuth();
 interface LoggingModel {
   username: string | null;
   password: string | null;
+  id: string | null;
+  email: string | null;
+  phone: string | null;
+  confirm_password: string | null;
 }
 // state
 const model = ref<LoggingModel>({
   username: null,
   password: null,
+  id: null,
+  email: null,
+  phone: null,
+  confirm_password: null,
 });
 
-const rules: FormRules = {
+const rules: ComputedRef<FormRules> = computed(() => ({
   username: {
     required: true,
     message: "Please enter your name",
-    trigger: ["blur"],
+    trigger: ["blur", "input"],
   },
   password: {
     required: true,
     message: "Please enter your password",
+    trigger: ["blur", "input"],
+  },
+  id: {
+    required: formMode.value === "register",
+    message: "Please enter your password",
     trigger: ["blur"],
   },
-};
+  email: {
+    required: formMode.value === "register",
+    message: "Please enter your email",
+    trigger: ["blur"],
+    type: "email",
+  },
+  phone: {
+    required: formMode.value === "register",
+    message: "Please enter your phone number",
+    trigger: ["blur"],
+  },
+  confirm_password: {
+    required: formMode.value === "register",
+    message: "Please enter a matching confirmation password",
+    trigger: ["blur"],
+    validator(rule, value: string) {
+      if (value !== model.value.password)
+        return new Error("Please eter a matching confirmation password");
+      if (!value) return new Error("Confrimation password is required");
+      return true;
+    },
+  },
+}));
 
+const formMode = ref<"login" | "register">("login");
+
+watch(formMode, () => {
+  model.value = {
+    username: null,
+    password: null,
+    id: null,
+    email: null,
+    phone: null,
+    confirm_password: null,
+  };
+});
 // handlers
 
 const submitForm = () => {
-  console.log("HELLOOO!!");
+  console.log(
+    formMode.value,
+    formMode.value === "login",
+    formMode.value === "register"
+  );
 
+  if (formMode.value === "login") login();
+  else if (formMode.value === "register") register();
+};
+
+const login = () => {
   formRef.value?.validate(
     async (errors: Array<FormValidationError> | undefined) => {
       if (!errors) {
@@ -70,6 +127,35 @@ const submitForm = () => {
       } else {
         console.log(errors);
         messenger.error("Login Failed!");
+      }
+    }
+  );
+};
+
+const register = () => {
+  console.log("IN REGISTER");
+
+  formRef.value?.validate(
+    async (errors: Array<FormValidationError> | undefined) => {
+      if (!errors) {
+        try {
+          await auth.register(
+            model.value.username?.trim()!,
+            model.value.password!,
+            model.value.phone!,
+            model.value.email!,
+            model.value.id!
+          );
+          messenger.success("Successful Registration!");
+          formMode.value = "login";
+        } catch (e: any) {
+          console.log(e);
+
+          messenger.error("Registration Failed!");
+        }
+      } else {
+        console.log(errors);
+        messenger.error("Registration Failed!");
       }
     }
   );
@@ -115,18 +201,88 @@ const submitForm = () => {
       <NFormItem path="password" label="Password">
         <NInput
           type="password"
+          show-password-on="mousedown"
           v-model:value="model.password"
           @keydown.enter.prevent
         />
       </NFormItem>
-      <NButton
-        secondary
-        strong
-        type="success"
-        @click="submitForm"
-        class="t-w-full hover:t-bg-green-500 hover:t-text-white t-mt-10"
-        >Login</NButton
-      >
+      <NCollapseTransition :show="formMode === 'login'">
+        <NButton
+          v-if="formMode === 'login'"
+          secondary
+          strong
+          type="success"
+          @click="submitForm"
+          class="t-w-full hover:t-bg-green-500 hover:t-text-white t-mt-6"
+        >
+          Login</NButton
+        >
+        <div
+          v-if="formMode === 'login'"
+          class="t-mt-3 t-w-full t-flex t-justify-center t-items-center"
+        >
+          New Customer ?
+          <NButton
+            @click="formMode = 'register'"
+            quaternary
+            type="success"
+            class="t-ml-1 t-p-1"
+            >Register</NButton
+          >
+        </div>
+      </NCollapseTransition>
+      <NCollapseTransition :show="formMode === 'register'">
+        <div v-if="formMode === 'register'">
+          <NFormItem path="confirm_password" label="Password Confirmation">
+            <NInput
+              type="password"
+              show-password-on="mousedown"
+              v-model:value="model.confirm_password"
+              @keydown.enter.prevent
+            />
+          </NFormItem>
+          <NFormItem path="id" label="National ID">
+            <NInput
+              type="text"
+              v-model:value="model.id"
+              @keydown.enter.prevent
+            />
+          </NFormItem>
+          <NFormItem path="email" label="Email">
+            <NInput
+              type="text"
+              v-model:value="model.email"
+              @keydown.enter.prevent
+            />
+          </NFormItem>
+          <NFormItem path="phone" label="Phone Number">
+            <NInput
+              type="text"
+              v-model:value="model.phone"
+              @keydown.enter.prevent
+            />
+          </NFormItem>
+          <NButton
+            secondary
+            strong
+            type="success"
+            @click="submitForm"
+            class="t-w-full hover:t-bg-green-500 hover:t-text-white t-mt-6"
+          >
+            Register</NButton
+          >
+          <div class="t-mt-3 t-w-full t-flex t-justify-center t-items-center">
+            You have an exiting account ?
+            <NButton
+              @click="formMode = 'login'"
+              quaternary
+              type="success"
+              class="t-ml-1 t-p-1"
+              >Register</NButton
+            >
+          </div>
+        </div>
+      </NCollapseTransition>
     </NForm>
   </main>
 </template>
