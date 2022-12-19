@@ -44,6 +44,7 @@
         @update-city="handleCityFilter"
         ref="tableRef"
         :range="filters.range"
+        :username="filters.username"
       />
     </NTabPane>
     <NTabPane
