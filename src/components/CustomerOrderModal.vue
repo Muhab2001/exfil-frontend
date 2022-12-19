@@ -6,34 +6,62 @@
     :block-scroll="true"
     :trap-focus="true"
     :show="props.visible"
-    :title="`Delivery Order #${props.order_id}`"
     transform-origin="center"
     content-style="padding-bottom: 0px"
+    header-style="padding-bottom: 0px"
     preset="card"
     class="t-w-full md:t-w-[80%] t-max-w-7xl t-mb-8"
     @close="() => $emit('closed')"
     size="large"
-  >
+    ><template #header>
+      <div class="t-flex t-flex-wrap">
+        <span class="t-text-3xl t-font-semibold t-mr-5"
+          >Delivery Order
+          <span class="t-text-green-400">#{{ props.order_id }}</span></span
+        >
+        <NTag
+          secondary
+          round
+          strong
+          type="success"
+          size="large"
+          v-if="order.isDelivered"
+        >
+          <template #icon>
+            <NIcon :component="CheckmarkCircle12Filled" />
+          </template>
+          Delivered
+        </NTag>
+      </div>
+    </template>
     <NDivider />
-    <h1 class="t-font-semibold t-flex t-flex-wrap">Order Details</h1>
-    <section class="t-mb-4">
-      <span class="t-mt-4 t-inline-flex t-flex t-flex-col t-mr-8">
-        <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
-          Recipient
+    <h1 class="t-font-semibold t-flex t-flex-wrap t-pl-4">Order Details</h1>
+    <section class="t-mb-4 t-pl-4">
+      <span class="t-mt-1 t-inline-flex t-flex t-flex-col t-mr-10">
+        <div class="t-text-xl t-mt-1 t-font-medium t-text-green-400">
+          <NIcon :component="UserAlt" size="15" class="t-mr-2" />
+          <span>Recipient</span>
         </div>
         <div class="t-text-lg">{{ order.recipient.username }}</div>
         <span class="t-mt-0 t-text-sm t-text-gray-400">{{
           order.recipient.email
         }}</span>
       </span>
-      <span class="t-mt-4 t-inline-flex t-flex t-flex-col">
-        <div class="t-text-xl t-mt-3 t-font-medium t-text-green-400">
-          Destination
+      <span class="t-mt-2 t-inline-flex t-flex t-flex-col">
+        <div
+          class="t-text-xl t-mt-1 t-font-medium t-text-green-400 t-flex t-items-center"
+        >
+          <NIcon class="t-mr-2" :component="Location20Filled" />
+          <span>Destination</span>
         </div>
-        <div class>
-          <span class="t-text-semibold t-text-lg"
-            >{{ order.destination.country }}, {{ order.destination.city }}</span
-          >, {{ order.destination.street }} - {{ order.destination.zipcode }}
+        <div>
+          <div class="t-text-lg">
+            {{ order.destination.country }}, {{ order.destination.city }}
+          </div>
+          <span class="t-mt-0 t-text-sm t-text-gray-400">
+            {{ order.destination.street }} -
+            {{ order.destination.zipcode }}</span
+          >
         </div>
       </span>
     </section>
@@ -49,9 +77,9 @@
         :editable="false"
       />
     </section>
-    <div class="t-w-full t-mt-6">
-      <NDivider title-placement="left">
-        <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Delivery Path</h1>
+    <div class="t-w-full t-mt-6 t-pl-4">
+      <NDivider title-placement="left" class="t-mb-0">
+        <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-0">Delivery Path</h1>
       </NDivider>
       <NSpace vertical>
         <NSteps vertical class="t-my-6"
@@ -66,10 +94,22 @@
       </NSpace>
     </div>
 
-    <NDivider title-placement="left">
-      <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-3">Order Payment</h1>
+    <NDivider title-placement="left" class="t-mb-0">
+      <h1 class="t-font-semibold t-flex t-flex-wrap t-mb-0">Order Payment</h1>
     </NDivider>
-    <div class="t-py-8 t-pt-0">
+    <div class="t-pl-4">
+      <div class="t-text-xl t-mt-3 t-mb-1 t-font-medium t-text-green-400">
+        Requested Fees
+      </div>
+      <div>
+        <span class="t-text-4xl t-mr-2 t-font-bold">{{
+          order.paymentAmount
+        }}</span>
+        <span class="t-text-gray-400 t-font-thin t-text-xl">SAR</span>
+      </div>
+    </div>
+    <NDivider />
+    <div class="t-py-8 t-pt-0 t-pl-4 t-text-green-400 t-font-medium">
       <h2>Status</h2>
       <NTag
         class="t-p-6 t-mt-3"
@@ -90,6 +130,7 @@
       >
     </div>
     <NButton
+      v-if="!order.isDelivered"
       class="t-w-full t-mb-5"
       secondary
       strong
@@ -146,7 +187,12 @@ import type {
   User,
   PackageLocation,
 } from "@/typings/globals";
-import { CheckmarkCircle12Filled, Money16Filled } from "@vicons/fluent";
+import {
+  CheckmarkCircle12Filled,
+  Money16Filled,
+  Location20Filled,
+} from "@vicons/fluent";
+import { UserAlt } from "@vicons/fa";
 import { ErrorOutlined } from "@vicons/material";
 import {
   NForm,
@@ -192,6 +238,7 @@ interface OrderState {
   isOTPSent: boolean;
   isPaidFor: boolean;
   paymentId: number;
+  paymentAmount: number;
 }
 
 interface OrderModel {
@@ -226,6 +273,7 @@ const order = ref<OrderState>({
   isOTPSent: false,
   isPaidFor: false,
   paymentId: 0,
+  paymentAmount: 0,
 });
 
 const message = useMessage();
@@ -271,6 +319,7 @@ const fetchData = async () => {
     isOTPSent: response.isOTPSent,
     isPaidFor: Boolean(response.payment.fulfilled),
     paymentId: response.payment.id,
+    paymentAmount: response.payment.amount,
   };
 
   console.log(order.value);
@@ -331,7 +380,9 @@ const confirmOTP = () => {
   loading.start();
   otpRef.value?.validate(async (errors) => {
     if (!errors) {
-      await AxiosInstance.patch("payment/fulfill/" + order.value.paymentId);
+      await AxiosInstance.patch("payment/fulfill/" + order.value.paymentId, {
+        otp: otpModel.value.otp,
+      });
       message.success("Payment Recorded Succesfully!");
       emits("closed");
       loading.finish();

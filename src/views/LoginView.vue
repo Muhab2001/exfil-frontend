@@ -181,7 +181,7 @@ const register = () => {
         Exfil
       </h1>
       <p class="t-mb-10 dark:t-text-white">
-        New Era of premium learning experience
+        Packages everywhere, under a single platform
       </p>
     </header>
     <NForm

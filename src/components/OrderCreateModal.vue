@@ -196,6 +196,7 @@
           filterable
           clearable
           :options="customers"
+          :render-label="renderLabel"
         />
       </NFormItem>
 
@@ -214,6 +215,7 @@
           filterable
           clearable
           :options="customers"
+          :render-label="renderLabel"
         />
       </NFormItem>
       <NDivider />

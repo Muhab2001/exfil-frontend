@@ -375,18 +375,23 @@ const renderLabel = (option: SelectOption): VNodeChild => {
 
 const markDelivered = async () => {
   console.log(order.value);
+  try {
+    orderModelRef.value = {
+      city: order.value.destination.city,
+      country: order.value.destination.country,
+      street: order.value.destination.street,
+      zipcode: order.value.destination.zipcode,
+      transport: orderModelRef.value.transport,
+      location_type: orderModelRef.value.location_type,
+      statuses: orderModelRef.value.statuses,
+    };
 
-  orderModelRef.value = {
-    city: order.value.destination.city,
-    country: order.value.destination.country,
-    street: order.value.destination.street,
-    zipcode: order.value.destination.zipcode,
-    transport: orderModelRef.value.transport,
-    location_type: orderModelRef.value.location_type,
-    statuses: orderModelRef.value.statuses,
-  };
-
-  await sendOrder();
+    await sendOrder();
+    message.success("Location recorded Succesfully!");
+  } catch (e) {
+    message.error("Location Update failed");
+    loading.error();
+  }
 };
 
 const submitForm = () => {
@@ -395,11 +400,12 @@ const submitForm = () => {
     if (!errors) {
       await sendOrder();
       message.success("Location recorded Succesfully!");
+      loading.finish();
     } else {
+      loading.error();
       message.error("Location update failed");
     }
   });
-  loading.finish();
 };
 
 const sendOrder = async () => {

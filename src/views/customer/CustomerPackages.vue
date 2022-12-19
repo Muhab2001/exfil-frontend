@@ -11,7 +11,6 @@
       >
       <NSelect
         class="t-w-60"
-        @update:value="fetchData"
         v-model:value="orderType"
         :options="[
           { label: 'Recieved Orders', value: 'recipient' },
@@ -57,7 +56,7 @@ import { AxiosInstance } from "@/axios";
 import CustomerOrderModal from "@/components/CustomerOrderModal.vue";
 import OrderCard from "@/components/OrderCard.vue";
 import { NEmpty, NSelect, type SelectOption } from "naive-ui";
-import { ref, reactive, onBeforeMount, type VNodeChild, h } from "vue";
+import { ref, reactive, onBeforeMount, type VNodeChild, h, watch } from "vue";
 
 interface OrderCardProps {
   id: number;
@@ -99,12 +98,19 @@ const renderLabel = (option: SelectOption): VNodeChild => {
 
 const orderType = ref<"sender" | "recipient">("recipient");
 
+watch(orderType, async () => {
+  console.log(orderType.value);
+  await fetchData();
+});
+
 const orders = ref<OrderCardProps[]>([]);
 
 const fetchData = async () => {
   const searchParam: { side: "recipient" | "sender" } = {
     side: orderType.value,
   };
+  console.log("SEARCH PARAM", searchParam);
+
   const response = (
     await AxiosInstance.get("order/customer", {
       params: searchParam,
